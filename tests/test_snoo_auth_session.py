@@ -12,7 +12,7 @@ from pysnoo.const import (OAUTH_LOGIN_ENDPOINT,
                           BASE_HEADERS)
 from pysnoo.auth_session import SnooAuthSession
 
-from tests.helpers import load_fixture
+from tests.helpers import load_fixture, get_token
 
 
 class TestSnooAuthSession(TestCase):
@@ -22,7 +22,7 @@ class TestSnooAuthSession(TestCase):
     async def test_login_success(self, mocked_request):
         """Test the successful fetch of an initial token"""
         # Setup
-        token_response = load_fixture('', 'access_token_response.json')
+        _, token_response = get_token()
         mocked_request.return_value.text = CoroutineMock(side_effect=[token_response])
         async with SnooAuthSession() as session:
 
@@ -55,9 +55,7 @@ class TestSnooAuthSession(TestCase):
     @patch('aiohttp.client.ClientSession._request')
     async def test_refresh_expired_token(self, mocked_request):
         """Test the automatic refresh of an expired token"""
-        token_response = load_fixture('', 'access_token_response.json')
-        token = json.loads(token_response)
-        token['expires_in'] = -10
+        token, token_response = get_token(-10)
 
         mocked_tocken_updater = MagicMock()
 

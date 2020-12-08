@@ -7,7 +7,8 @@ from oauthlib.oauth2 import LegacyApplicationClient
 
 from .const import (OAUTH_CLIENT_ID,
                     OAUTH_TOKEN_REFRESH_ENDPOINT,
-                    OAUTH_LOGIN_ENDPOINT)
+                    OAUTH_LOGIN_ENDPOINT,
+                    BASE_HEADERS)
 from .oauth.oauth2_session import OAuth2Session
 
 
@@ -27,7 +28,8 @@ class SnooAuthSession(OAuth2Session):
             redirect_uri=None,
             token=token,
             state=None,
-            token_updater=token_updater)
+            token_updater=token_updater,
+            headers=BASE_HEADERS)
 
     def __init_subclass__(cls: Type["SnooAuthSession"]) -> None:
         """Overwrite to suppress warning in base class"""

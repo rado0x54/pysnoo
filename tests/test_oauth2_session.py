@@ -9,7 +9,7 @@ from aiohttp import BasicAuth
 from asynctest import TestCase, patch, CoroutineMock, MagicMock, call
 from callee import Contains
 
-from pysnoo.oauth.oauth2_session import OAuth2Session, TokenUpdated, TokenExpiredError
+from pysnoo.oauth.oauth2_session import OAuth2Session, TokenUpdated, TokenExpiredError, InsecureTransportError
 
 from tests.helpers import load_fixture
 
@@ -89,6 +89,12 @@ class TestOAuth2hSession(TestCase):
             self.assertTrue(token_json.items() <= resp.items(), 'Response does not contain all Keys from Mock Payload.')
             self.assertIn('expires_at', resp)
 
+    async def test_fetch_token_insecure_url(self):
+        """Test the failed fetch of an initial token on insecure URL"""
+        async with OAuth2Session(client_id=TEST_CLIENT_ID, auto_refresh_url=TOKEN_REFRESH_ENDPOINT) as oauth_session:
+            with self.assertRaises(InsecureTransportError):
+                await oauth_session.fetch_token('http://localhost', code='CODE', client_id=TEST_CLIENT_ID)
+
     @patch('aiohttp.client.ClientSession._request')
     async def test_fetch_token_client_id_get(self, mocked_request):
         """Test the successful fetch of an initial token by client_id with get-method"""
@@ -156,6 +162,9 @@ class TestOAuth2hSession(TestCase):
 
             del oauth_session.access_token
             self.assertIsNone(oauth_session.access_token)
+
+            with self.assertRaises(ValueError):
+                oauth_session.register_compliance_hook('unknown_type', None)
 
     @patch('aiohttp.client.ClientSession._request')
     async def test_refresh_expired_token(self, mocked_request):
@@ -235,6 +244,18 @@ class TestOAuth2hSession(TestCase):
             with self.assertRaises(TokenExpiredError):
                 async with oauth_session.get(TEST_API_URI) as resp:
                     self.assertIsNone(resp)
+
+    async def test_manual_refresh_token_without_token_url(self):
+        """Test the manual refresh of an token without an auto_refresh_url"""
+        async with OAuth2Session(client_id=TEST_CLIENT_ID) as oauth_session:
+            with self.assertRaises(ValueError):
+                await oauth_session.refresh_token(None)
+
+    async def test_manual_refresh_token_without_insecure_token_url(self):
+        """Test the manual refresh of an token without an auto_refresh_url"""
+        async with OAuth2Session(client_id=TEST_CLIENT_ID) as oauth_session:
+            with self.assertRaises(InsecureTransportError):
+                await oauth_session.refresh_token('http://localhost')
 
     @patch('aiohttp.client.ClientSession._request')
     async def test_call_without_token(self, mocked_request):

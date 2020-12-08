@@ -256,7 +256,7 @@ class OAuth2Session(aiohttp.ClientSession):
             _LOGGER.debug(
                 'Response headers were %s and content %s.',
                 resp.headers, text)
-            resp = self._invoke_hooks(resp, 'access_token_response')
+            self._invoke_hooks(resp, 'access_token_response')
 
             self._client.parse_request_body_response(text, scope=self.scope)
             self.token = self._client.token
@@ -347,6 +347,8 @@ class OAuth2Session(aiohttp.ClientSession):
                 'Response headers were %s and content %s.',
                 resp.headers, text)
 
+            self._invoke_hooks(text, 'refresh_token_response')
+
             self.token = self._client.parse_request_body_response(
                 text, scope=self.scope)
             if 'refresh_token' not in self.token:
@@ -362,8 +364,7 @@ class OAuth2Session(aiohttp.ClientSession):
         if not is_secure_transport(url):
             raise InsecureTransportError()
         if self.token and not withhold_token:
-            url, headers, data = self._invoke_hooks(
-                (url, headers, data), 'protected_request')
+            self._invoke_hooks((url, headers, data), 'protected_request')
             _LOGGER.debug('Adding token %s to request.', self.token)
             try:
                 url, headers, data = self._client.add_token(

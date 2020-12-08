@@ -25,8 +25,7 @@ class TestSnooAuthSession(TestCase):
             # Check
             mocked_request.assert_called_once_with(
                 'POST', OAuth.LOGIN_ENDPOINT,
-                json={'grant_type': 'password', 'username': 'USER', 'password': 'PASSWORD'},
-                data=None,
+                data=json.dumps({'grant_type': 'password', 'username': 'USER', 'password': 'PASSWORD'}),
                 timeout=None,
                 headers={'Accept': 'application/json', 'Content-Type': 'application/json;charset=UTF-8'},
                 auth=ANY,
@@ -67,8 +66,7 @@ class TestSnooAuthSession(TestCase):
         # Check that TOKEN_REFRESH_ENDPOINT was called
         mocked_request.assert_has_calls([
             call('POST', OAuth.TOKEN_REFRESH_ENDPOINT,
-                 json={'grant_type': 'refresh_token', 'refresh_token': token_response_dict['refresh_token'], 'allow_redirects': 'True'},
-                 data=None,
+                 data=json.dumps({'grant_type': 'refresh_token', 'refresh_token': token_response_dict['refresh_token'], 'allow_redirects': 'True'}),
                  timeout=None,
                  headers={'Accept': 'application/json', 'Content-Type': 'application/json;charset=UTF-8'},
                  auth=None,

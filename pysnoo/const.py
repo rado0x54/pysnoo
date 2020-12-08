@@ -7,9 +7,7 @@ BASE_HEADERS = {
 }
 
 # Snoo API endpoints
-# SNOO_API_URI = 'https://snoo-api.happiestbaby.com'
-SNOO_API_URI = 'https://localhost'
-
+SNOO_API_URI = 'https://snoo-api.happiestbaby.com'
 
 # Oauth-related
 class OAuth:

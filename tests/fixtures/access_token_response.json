@@ -1,0 +1,11 @@
+{
+    "access_token": "JWT_TOKEN",
+    "expires_in": 10800,
+    "groups": [
+        "Users"
+    ],
+    "refresh_token": "REFRESH_TOKEN",
+    "scope": "offline_access",
+    "token_type": "Bearer",
+    "userId": "HEX_USER_ID"
+}

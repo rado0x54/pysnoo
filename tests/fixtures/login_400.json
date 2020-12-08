@@ -1,0 +1,10 @@
+{
+    "error": {
+        "code": 1004,
+        "localizedMessage": "Email or password is incorrect",
+        "message": "Email or password is incorrect",
+        "name": "IncorrectPasswordError",
+        "status": 400,
+        "stormpathCode": 7100
+    }
+}

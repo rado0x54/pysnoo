@@ -2,7 +2,6 @@
 """PySnoo OAuth Session."""
 
 import json
-from typing import Type
 from oauthlib.oauth2 import LegacyApplicationClient
 
 from .const import (OAUTH_CLIENT_ID,
@@ -30,10 +29,6 @@ class SnooAuthSession(OAuth2Session):
             state=None,
             token_updater=token_updater,
             headers=BASE_HEADERS)
-
-    def __init_subclass__(cls: Type["SnooAuthSession"]) -> None:
-        """Overwrite to suppress warning in base class"""
-        return
 
     async def fetch_token(self, username, password):  # pylint: disable=arguments-differ
         # Note, Snoo OAuth API is not 100% RFC 6749 compliant. (Wrong Content-Type)

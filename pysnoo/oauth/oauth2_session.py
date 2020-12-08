@@ -7,10 +7,7 @@ Adapted from: https://gist.github.com/kellerza/5ca798f49983bb702bc6e7a05ba53def
 - Allow modifier function on fetch_token and refresh_token in order to allow
   JSON Content-Type.
 """
-from typing import Type
-
 import logging
-import warnings
 import aiohttp
 
 from oauthlib.common import generate_token, urldecode
@@ -97,15 +94,6 @@ class OAuth2Session(aiohttp.ClientSession):
             'refresh_token_response': set(),
             'protected_request': set(),
         }
-
-    def __init_subclass__(cls: Type["OAuth2Session"]) -> None:
-        """Overwrite to suppress warning in base class"""
-        warnings.warn(
-            "Inheritance class {} from OAuth2Session "
-            "is discouraged".format(cls.__name__),
-            DeprecationWarning,
-            stacklevel=2,
-        )
 
     def new_state(self):
         """Generates a state string to be used in authorizations."""

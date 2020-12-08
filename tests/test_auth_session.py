@@ -1,9 +1,13 @@
+"""TestClass for the SnooAuthSession (and underlying OAuthBaseSession)"""
+import json
+
 from asynctest import TestCase, patch, CoroutineMock, ANY, MagicMock, call
 from callee import Contains
-import json
 from oauthlib.oauth2 import OAuth2Error
 
-from pysnoo.const import OAuth, SNOO_API_URI
+from pysnoo.const import (OAUTH_LOGIN_ENDPOINT,
+                          OAUTH_TOKEN_REFRESH_ENDPOINT,
+                          SNOO_API_URI)
 from pysnoo.auth_session import SnooAuthSession
 
 from tests.helpers import load_fixture
@@ -14,6 +18,7 @@ class TestSnooAuthSession(TestCase):
 
     @patch('aiohttp.client.ClientSession._request')
     async def test_login_success(self, mocked_request):
+        """Test the successful fetch of an initial token"""
         # Setup
         token_response = load_fixture('', 'access_token_response.json')
         mocked_request.return_value.text = CoroutineMock(side_effect=[token_response])
@@ -24,7 +29,7 @@ class TestSnooAuthSession(TestCase):
 
             # Check
             mocked_request.assert_called_once_with(
-                'POST', OAuth.LOGIN_ENDPOINT,
+                'POST', OAUTH_LOGIN_ENDPOINT,
                 data=json.dumps({'grant_type': 'password', 'username': 'USER', 'password': 'PASSWORD'}),
                 timeout=None,
                 headers={'Accept': 'application/json', 'Content-Type': 'application/json;charset=UTF-8'},
@@ -37,6 +42,7 @@ class TestSnooAuthSession(TestCase):
 
     @patch('aiohttp.client.ClientSession._request')
     async def test_login_failure(self, mocked_request):
+        """Test the failed fetch of an initial token"""
         token_response = load_fixture('', 'login_400.json')
         mocked_request.return_value.text = CoroutineMock(side_effect=[token_response])
 
@@ -46,6 +52,7 @@ class TestSnooAuthSession(TestCase):
 
     @patch('aiohttp.client.ClientSession._request')
     async def test_refresh_expired_token(self, mocked_request):
+        """Test the automatic refresh of an expired token"""
         # loop = asyncio.get_event_loop()
         token_response = load_fixture('', 'access_token_response.json')
         token_response_dict = json.loads(token_response)
@@ -65,8 +72,10 @@ class TestSnooAuthSession(TestCase):
 
         # Check that TOKEN_REFRESH_ENDPOINT was called
         mocked_request.assert_has_calls([
-            call('POST', OAuth.TOKEN_REFRESH_ENDPOINT,
-                 data=json.dumps({'grant_type': 'refresh_token', 'refresh_token': token_response_dict['refresh_token'], 'allow_redirects': 'True'}),
+            call('POST', OAUTH_TOKEN_REFRESH_ENDPOINT,
+                 data=json.dumps({'grant_type': 'refresh_token',
+                                  'refresh_token': token_response_dict['refresh_token'],
+                                  'allow_redirects': 'True'}),
                  timeout=None,
                  headers={'Accept': 'application/json', 'Content-Type': 'application/json;charset=UTF-8'},
                  auth=None,
@@ -82,9 +91,3 @@ class TestSnooAuthSession(TestCase):
 
         # Check that token_updater function was called with new TOKEN
         mocked_tocken_updater.assert_called_once_with(Contains('access_token'))
-
-
-
-
-
-

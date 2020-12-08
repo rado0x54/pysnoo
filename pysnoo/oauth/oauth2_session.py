@@ -1,3 +1,4 @@
+# coding: utf-8
 """aiohttp_oauthlib client.
 
 Adapted from: https://gist.github.com/kellerza/5ca798f49983bb702bc6e7a05ba53def
@@ -6,14 +7,16 @@ Adapted from: https://gist.github.com/kellerza/5ca798f49983bb702bc6e7a05ba53def
 - Allow modifier function on fetch_token and refresh_token in order to allow
   JSON Content-Type.
 """
+from typing import Type
+
 import logging
 import warnings
+import aiohttp
 
 from oauthlib.common import generate_token, urldecode
 from oauthlib.oauth2 import WebApplicationClient, InsecureTransportError
 from oauthlib.oauth2 import TokenExpiredError, is_secure_transport
-import aiohttp
-from typing import Type
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,7 +24,7 @@ _LOGGER = logging.getLogger(__name__)
 class TokenUpdated(Warning):
     """Exception."""
     def __init__(self, token):
-        super(TokenUpdated, self).__init__()
+        super().__init__()
         self.token = token
 
 
@@ -76,7 +79,7 @@ class OAuth2Session(aiohttp.ClientSession):
                         in its token argument.
         :param kwargs: Arguments to pass to the Session constructor.
         """
-        super(OAuth2Session, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._client = client or WebApplicationClient(client_id, token=token)
         self.token = token or {}
         self.scope = scope
@@ -366,7 +369,7 @@ class OAuth2Session(aiohttp.ClientSession):
     async def _request(
             self, method, url, *, data=None, headers=None,
             withhold_token=False, client_id=None, client_secret=None,
-            **kwargs):
+            **kwargs):  # pylint: disable=arguments-differ
         """Intercept all requests and add the OAuth 2 token if present."""
         if not is_secure_transport(url):
             raise InsecureTransportError()
@@ -378,7 +381,7 @@ class OAuth2Session(aiohttp.ClientSession):
                 url, headers, data = self._client.add_token(
                     url, http_method=method, body=data, headers=headers)
             # Attempt to retrieve and save new access token if expired
-            except TokenExpiredError:
+            except TokenExpiredError as token_expired_error:
                 if self.auto_refresh_url:
                     _LOGGER.debug(
                         'Auto refresh is set, attempting to refresh at %s.',
@@ -403,7 +406,7 @@ class OAuth2Session(aiohttp.ClientSession):
                             url, http_method=method, body=data,
                             headers=headers)
                     else:
-                        raise TokenUpdated(token)
+                        raise TokenUpdated(token) from token_expired_error
                 else:
                     raise
 

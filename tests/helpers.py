@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Helper Module for the PySnoo tests."""
 import os
 
 
@@ -7,4 +9,3 @@ def load_fixture(folder, filename, mode='r'):
                         'fixtures', folder, filename)
     with open(path, mode) as fdp:
         return fdp.read()
-

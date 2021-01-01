@@ -1,2 +1,3 @@
 oauthlib
 aiohttp
+pubnub>=4.7.0

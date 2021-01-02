@@ -2,6 +2,8 @@
 """PySnoo OAuth Session."""
 
 import json
+from typing import Callable
+
 from oauthlib.oauth2 import LegacyApplicationClient
 
 from .const import (OAUTH_CLIENT_ID,
@@ -15,7 +17,9 @@ class SnooAuthSession(OAuth2Session):
     """Snoo-specific OAuth2 Session Object"""
 
     def __init__(
-            self, token=None, token_updater=None):
+            self,
+            token: dict = None,
+            token_updater: Callable[[dict], None] = None) -> None:
         """Construct a new OAuth 2 client session."""
 
         # From Const
@@ -30,7 +34,7 @@ class SnooAuthSession(OAuth2Session):
             token_updater=token_updater,
             headers=BASE_HEADERS)
 
-    async def fetch_token(self, username, password):  # pylint: disable=arguments-differ
+    async def fetch_token(self, username: str, password: str):  # pylint: disable=arguments-differ
         # Note, Snoo OAuth API is not 100% RFC 6749 compliant. (Wrong Content-Type)
         headers = {
             'Accept': 'application/json',
@@ -41,7 +45,7 @@ class SnooAuthSession(OAuth2Session):
                                          timeout=None, headers=headers, verify_ssl=True,
                                          post_payload_modifier=json.dumps)
 
-    async def refresh_token(self, token_url, **kwargs):  # pylint: disable=arguments-differ
+    async def refresh_token(self, token_url: str, **kwargs):  # pylint: disable=arguments-differ
         # Note, Snoo OAuth API is not 100% RFC 6749 compliant. (Wrong Content-Type)
         headers = {
             'Accept': 'application/json',

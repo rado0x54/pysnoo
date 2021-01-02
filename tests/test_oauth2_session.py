@@ -11,7 +11,7 @@ from callee import Contains
 
 from pysnoo.oauth.oauth2_session import OAuth2Session, TokenUpdated, TokenExpiredError, InsecureTransportError
 
-from tests.helpers import load_fixture
+from tests.helpers import load_fixture, get_token
 
 TEST_CLIENT_ID = 'oauth2_client_id'
 TEST_API_URI = 'https://localhost:8080'
@@ -26,8 +26,8 @@ class TestOAuth2hSession(TestCase):
     async def test_fetch_token_username(self, mocked_request):
         """Test the successful fetch of an initial token by username"""
         # Setup
-        token_response = load_fixture('', 'access_token_response.json')
-        mocked_request.return_value.text = CoroutineMock(side_effect=[token_response])
+        token, token_string = get_token()
+        mocked_request.return_value.text = CoroutineMock(side_effect=[token_string])
         async with OAuth2Session(client_id=TEST_CLIENT_ID, auto_refresh_url=TOKEN_REFRESH_ENDPOINT) as oauth_session:
 
             self.assertFalse(oauth_session.authorized)
@@ -53,10 +53,8 @@ class TestOAuth2hSession(TestCase):
 
             login_hook.assert_called_once()
 
-            token_json = json.loads(token_response)
             # Library changes space-delimited array to list
-            token_json['scope'] = token_json['scope'].split(' ')
-            self.assertTrue(token_json.items() <= resp.items(), 'Response does not contain all Keys from Mock Payload.')
+            self.assertTrue(token.items() <= resp.items(), 'Response does not contain all Keys from Mock Payload.')
             self.assertIn('expires_at', resp)
             self.assertTrue(oauth_session.authorized)
             self.assertEqual(oauth_session.token, resp)
@@ -66,8 +64,8 @@ class TestOAuth2hSession(TestCase):
     async def test_fetch_token_client_id(self, mocked_request):
         """Test the successful fetch of an initial token by client_id"""
         # Setup
-        token_response = load_fixture('', 'access_token_response.json')
-        mocked_request.return_value.text = CoroutineMock(side_effect=[token_response])
+        token, token_string = get_token()
+        mocked_request.return_value.text = CoroutineMock(side_effect=[token_string])
         async with OAuth2Session(client_id=TEST_CLIENT_ID, auto_refresh_url=TOKEN_REFRESH_ENDPOINT) as oauth_session:
 
             # Test
@@ -83,10 +81,8 @@ class TestOAuth2hSession(TestCase):
                 auth=BasicAuth(login=TEST_CLIENT_ID, password='', encoding='latin1'),
                 verify_ssl=True)
 
-            token_json = json.loads(token_response)
             # Library changes space-delimited array to list
-            token_json['scope'] = token_json['scope'].split(' ')
-            self.assertTrue(token_json.items() <= resp.items(), 'Response does not contain all Keys from Mock Payload.')
+            self.assertTrue(token.items() <= resp.items(), 'Response does not contain all Keys from Mock Payload.')
             self.assertIn('expires_at', resp)
 
     async def test_fetch_token_insecure_url(self):
@@ -99,8 +95,8 @@ class TestOAuth2hSession(TestCase):
     async def test_fetch_token_client_id_get(self, mocked_request):
         """Test the successful fetch of an initial token by client_id with get-method"""
         # Setup
-        token_response = load_fixture('', 'access_token_response.json')
-        mocked_request.return_value.text = CoroutineMock(side_effect=[token_response])
+        token, token_string = get_token()
+        mocked_request.return_value.text = CoroutineMock(side_effect=[token_string])
         async with OAuth2Session(client_id=TEST_CLIENT_ID, auto_refresh_url=TOKEN_REFRESH_ENDPOINT) as oauth_session:
 
             # Test
@@ -118,10 +114,8 @@ class TestOAuth2hSession(TestCase):
                 auth=BasicAuth(login=TEST_CLIENT_ID, password='', encoding='latin1'),
                 verify_ssl=True)
 
-            token_json = json.loads(token_response)
             # Library changes space-delimited array to list
-            token_json['scope'] = token_json['scope'].split(' ')
-            self.assertTrue(token_json.items() <= resp.items(), 'Response does not contain all Keys from Mock Payload.')
+            self.assertTrue(token.items() <= resp.items(), 'Response does not contain all Keys from Mock Payload.')
             self.assertIn('expires_at', resp)
 
     async def test_fetch_token_fails_on_unsupported_method(self):
@@ -135,7 +129,7 @@ class TestOAuth2hSession(TestCase):
     async def test_session_setters_and_state(self):
         """Test the successful fetch of an initial token by username"""
         # Setup
-        token = json.loads(load_fixture('', 'access_token_response.json'))
+        token, _ = get_token()
         async with OAuth2Session(client_id=TEST_CLIENT_ID, auto_refresh_url=TOKEN_REFRESH_ENDPOINT) as oauth_session:
 
             self.assertFalse(oauth_session.authorized)
@@ -169,14 +163,12 @@ class TestOAuth2hSession(TestCase):
     @patch('aiohttp.client.ClientSession._request')
     async def test_refresh_expired_token(self, mocked_request):
         """Test the automatic refresh of an expired token"""
-        token_response = load_fixture('', 'access_token_response.json')
-        token = json.loads(token_response)
-        token['expires_in'] = -10
+        token, token_string = get_token(-10)
 
         mocked_tocken_updater = MagicMock()
 
         # Token Refresh POST
-        mocked_request.return_value.text = CoroutineMock(side_effect=[token_response, 'test'])
+        mocked_request.return_value.text = CoroutineMock(side_effect=[token_string, 'test'])
 
         async with OAuth2Session(client_id=TEST_CLIENT_ID, auto_refresh_url=TOKEN_REFRESH_ENDPOINT,
                                  token=token, token_updater=mocked_tocken_updater) as oauth_session:
@@ -190,7 +182,7 @@ class TestOAuth2hSession(TestCase):
                 response_body = await resp.text()
                 self.assertEqual('test', response_body)
 
-                refresh_hook.assert_called_once_with(token_response)
+                refresh_hook.assert_called_once_with(token_string)
                 request_hook.assert_called_once_with((TEST_API_URI, None, None))
 
         # Check that TOKEN_REFRESH_ENDPOINT was called
@@ -219,12 +211,10 @@ class TestOAuth2hSession(TestCase):
     @patch('aiohttp.client.ClientSession._request')
     async def test_refresh_expired_token_without_updater(self, mocked_request):
         """Test the automatic refresh of an expired token without an updater function"""
-        token_response = load_fixture('', 'access_token_response.json')
-        token = json.loads(token_response)
-        token['expires_in'] = -10
+        token, token_string = get_token(-10)
 
         # Token Refresh POST
-        mocked_request.return_value.text = CoroutineMock(side_effect=[token_response])
+        mocked_request.return_value.text = CoroutineMock(side_effect=[token_string])
 
         async with OAuth2Session(client_id=TEST_CLIENT_ID, auto_refresh_url=TOKEN_REFRESH_ENDPOINT,
                                  token=token) as oauth_session:
@@ -235,9 +225,7 @@ class TestOAuth2hSession(TestCase):
 
     async def test_refresh_expired_token_without_auto_refresh_url(self):
         """Test the automatic refresh of an expired token without an auto_refresh_url"""
-        token_response = load_fixture('', 'access_token_response.json')
-        token = json.loads(token_response)
-        token['expires_in'] = -10
+        token, _ = get_token(-10)
 
         async with OAuth2Session(client_id=TEST_CLIENT_ID,
                                  token=token) as oauth_session:

@@ -45,7 +45,7 @@ class TestSnooAuthSession(TestCase):
     @patch('aiohttp.client.ClientSession._request')
     async def test_login_failure(self, mocked_request):
         """Test the failed fetch of an initial token"""
-        token_response = load_fixture('', 'login_400.json')
+        token_response = load_fixture('', 'us_login__post_400.json')
         mocked_request.return_value.text = CoroutineMock(side_effect=[token_response])
 
         async with SnooAuthSession() as session:

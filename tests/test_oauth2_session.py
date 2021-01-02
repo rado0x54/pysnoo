@@ -3,15 +3,13 @@
 
 This ideally moves into a separate library. (along with the base class).
 """
-import json
-
 from aiohttp import BasicAuth
 from asynctest import TestCase, patch, CoroutineMock, MagicMock, call
 from callee import Contains
 
 from pysnoo.oauth.oauth2_session import OAuth2Session, TokenUpdated, TokenExpiredError, InsecureTransportError
 
-from tests.helpers import load_fixture, get_token
+from tests.helpers import get_token
 
 TEST_CLIENT_ID = 'oauth2_client_id'
 TEST_API_URI = 'https://localhost:8080'

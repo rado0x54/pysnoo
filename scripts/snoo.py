@@ -1,15 +1,17 @@
+"""Snoo CLI Tool"""
 import asyncio
 import logging
 import argparse
+import getpass
 
 from pysnoo.auth_session import SnooAuthSession
-from pysnoo.pubnub import SnooPubNub
 
 logging.basicConfig(level=logging.DEBUG)
 
 
 async def async_main(username, password, token):
-    print('Hello ...')
+    """Async Main"""
+    print('Hello ...' + token)
     async with SnooAuthSession() as auth:
         new_token = await auth.fetch_token(username, password)
         print('Token: {}'.format(new_token))
@@ -19,7 +21,6 @@ async def async_main(username, password, token):
 
         # pubnub = SnooPubNub(auth.access_token, SERIAL)
         # pubnub.subscribe()
-
 
 
 def _header():
@@ -34,10 +35,7 @@ def _bar():
 
 def get_username():
     """read username from STDIN"""
-    try:
-        username = raw_input("Username: ")
-    except NameError:
-        username = input("Username: ")
+    username = input("Username: ")
     return username
 
 

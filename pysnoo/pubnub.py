@@ -8,17 +8,19 @@ from pubnub.pubnub import PubNub
 
 
 class MySubscribeCallback(SubscribeCallback):
+    """Sample Subscription Class"""
+
     def presence(self, pubnub, presence):
         print('presence')
         print(presence)
-        pass  # handle incoming presence data
+        # handle incoming presence data
 
     def status(self, pubnub, status):
         print('status')
         print(status)
         if status.category == PNStatusCategory.PNUnexpectedDisconnectCategory:
             print('PNStatusCategory.PNUnexpectedDisconnectCategory')
-            pass  # This event happens when radio / connectivity is lost
+            # This event happens when radio / connectivity is lost
 
         elif status.category == PNStatusCategory.PNConnectedCategory:
             # Connect event. You can do stuff like publish, and know you'll get it.
@@ -28,12 +30,10 @@ class MySubscribeCallback(SubscribeCallback):
             # pubnub.publish().channel('my_channel').message('Hello world!').pn_async(my_publish_callback)
         elif status.category == PNStatusCategory.PNReconnectedCategory:
             print('PNStatusCategory.PNReconnectedCategory')
-            pass
             # Happens as part of our regular operation. This event happens when
             # radio / connectivity is lost, then regained.
         elif status.category == PNStatusCategory.PNDecryptionErrorCategory:
             print('PNStatusCategory.PNDecryptionErrorCategory')
-            pass
             # Handle message decryption error. Probably client configured to
             # encrypt messages and on live data feed it received plain text.
 
@@ -44,6 +44,7 @@ class MySubscribeCallback(SubscribeCallback):
 
 class SnooPubNub:
     """A Python Abstraction for Snoos PubNub Interface."""
+    # pylint: disable=too-few-public-methods,fixme
 
     def __init__(self, access_token, snoo_serial):
         """Initialize the Snoo PubNub object."""
@@ -52,7 +53,9 @@ class SnooPubNub:
         self._pnconfig = self._setup_pnconfig(access_token)
         self._pubnub = PubNub(self._pnconfig)
 
-    def _setup_pnconfig(self, access_token):
+    @staticmethod
+    def _setup_pnconfig(access_token):
+        """Generate Setup"""
         pnconfig = PNConfiguration()
         pnconfig.subscribe_key = "sub-c-97bade2a-483d-11e6-8b3b-02ee2ddab7fe"
         pnconfig.publish_key = "pub-c-699074b0-7664-4be2-abf8-dcbb9b6cd2b"
@@ -62,9 +65,9 @@ class SnooPubNub:
         return pnconfig
 
     def subscribe(self):
+        """Subscribe"""
         self._pubnub.add_listener(MySubscribeCallback())
         self._pubnub.subscribe().channels([
             'ActivityState.{}'.format(self._snoo_serial),
             'ControlCommand.{}-pnpres'.format(self._snoo_serial)
         ]).execute()
-

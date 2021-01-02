@@ -14,6 +14,7 @@ class Snoo:
         self.auth = auth
 
     async def get_me(self) -> User:
+        """Return Information about the current User"""
         async with self.auth.get(SNOO_ME_ENDPOINT) as resp:
             assert resp.status == 200
-            return await resp.json()
+            return User.from_dict(await resp.json())

@@ -6,5 +6,9 @@ entities and expose their functionality.
 """
 
 from .auth_session import SnooAuthSession
+from .snoo import Snoo
+from .models import User
 
-__all__ = ['SnooAuthSession']
+__all__ = ['SnooAuthSession',
+           'Snoo',
+           'User']

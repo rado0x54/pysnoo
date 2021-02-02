@@ -5,7 +5,7 @@ import argparse
 import getpass
 import json
 
-from pysnoo import SnooAuthSession
+from pysnoo import SnooAuthSession, Snoo
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -20,8 +20,10 @@ async def async_main(username, password, token, token_updater):
             new_token = await auth.fetch_token(username, password)
             token_updater(new_token)
 
-        me_response = await auth.get('https://snoo-api.happiestbaby.com/us/me/')
-        print('Me: {}'.format(await me_response.json()))
+        snoo = Snoo(auth)
+
+        user = await snoo.get_me()
+        print(f'{user}')
 
         # pubnub = SnooPubNub(auth.access_token, SERIAL)
         # pubnub.subscribe()

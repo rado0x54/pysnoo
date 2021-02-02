@@ -1,0 +1,29 @@
+{
+  "_id": "0123456789abcdef01234569",
+  "babyName": "John Baby Doe",
+  "birthDate": "2021-01-17T00:00:00.000Z",
+  "createdAt": "2020-11-18T16:12:08.064Z",
+  "disabledLimiter": false,
+  "pictures": [
+    {
+      "id": "0123456789abcdef01234569_0123456789abcdef01234569",
+      "mime": "image/png",
+      "encoded": false,
+      "updatedAt": "2021-01-21T10:45:07.542Z"
+    }
+  ],
+  "settings": {
+    "responsivenessLevel": "lvl0",
+    "minimalLevelVolume": "lvl-1",
+    "soothingLevelVolume": "lvl0",
+    "minimalLevel": "baseline",
+    "motionLimiter": true,
+    "weaning": false,
+    "carRideMode": false,
+    "offlineLock": false,
+    "daytimeStart": 7
+  },
+  "sex": "Male",
+  "updatedAt": "2021-01-25T00:20:42.350Z",
+  "updatedByUserAt": "2021-01-21T10:45:12.609Z"
+}

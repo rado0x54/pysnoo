@@ -7,8 +7,28 @@ entities and expose their functionality.
 
 from .auth_session import SnooAuthSession
 from .snoo import Snoo
-from .models import User
+from .models import (User,
+                     Device,
+                     Baby,
+                     SSID,
+                     Picture,
+                     Settings,
+                     ResponsivenessLevel,
+                     MinimalLevelVolume,
+                     SoothingLevelVolume,
+                     MinimalLevel,
+                     Sex)
 
 __all__ = ['SnooAuthSession',
            'Snoo',
-           'User']
+           'User',
+           'Device',
+           'Baby',
+           'SSID',
+           'Picture',
+           'Settings',
+           'ResponsivenessLevel',
+           'MinimalLevelVolume',
+           'SoothingLevelVolume',
+           'MinimalLevel',
+           'Sex']

@@ -1,0 +1,16 @@
+[
+    {
+        "baby": "0123456789abcdef12345678",
+        "createdAt": "2019-02-19T19:03:13.544Z",
+        "firmwareUpdateDate": "2020-05-10T22:53:07.134Z",
+        "firmwareVersion": "v1.12.11",
+        "lastProvisionSuccess": "2020-11-18T16:25:57.973Z",
+        "lastSSID": {
+            "name": "SSID-NETWORK",
+            "updatedAt": "2020-11-20T22:50:40.097Z"
+        },
+        "serialNumber": "0123456789012345",
+        "timezone": "America/New_York",
+        "updatedAt": "2020-11-21T03:33:53.040Z"
+    }
+]

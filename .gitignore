@@ -131,4 +131,4 @@ dmypy.json
 .coveralls.yml
 .idea/
 
-.snoo_token.txt
+.snoo_token*.txt

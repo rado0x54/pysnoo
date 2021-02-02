@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Helper Module for the PySnoo tests."""
 import os
 import json

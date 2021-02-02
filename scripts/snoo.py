@@ -4,8 +4,10 @@ import logging
 import argparse
 import getpass
 import json
+from datetime import date
 
 from pysnoo import SnooAuthSession, Snoo
+from pysnoo.const import SNOO_BABY_ENDPOINT
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -24,6 +26,21 @@ async def async_main(username, password, token, token_updater):
 
         user = await snoo.get_me()
         print(f'{user}')
+        devices = await snoo.get_devices()
+        print(f'{devices}')
+        baby = await snoo.get_baby()
+        print(f'{baby}')
+        baby = await snoo.set_baby_info('John 3', date(2021, 1, 18), 6, None)
+        print(f'{baby}')
+
+        async with auth.get(SNOO_BABY_ENDPOINT) as response:
+            json_body = await response.json()
+            print(json_body)
+
+
+        # async with auth.get("https://httpbin.org/headers") as r:
+        #     json_body = await r.json()
+        #     print(json_body)
 
         # pubnub = SnooPubNub(auth.access_token, SERIAL)
         # pubnub.subscribe()

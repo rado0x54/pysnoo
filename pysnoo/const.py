@@ -17,3 +17,5 @@ OAUTH_sSCOPE = ['offline_access']
 
 SNOO_REGISTER_ENDPOINT = SNOO_API_URI + '/us/register/'
 SNOO_ME_ENDPOINT = SNOO_API_URI + '/us/me/'
+SNOO_DEVICES_ENDPOINT = SNOO_API_URI + '/ds/me/devices/'
+SNOO_BABY_ENDPOINT = SNOO_API_URI + '/us/v3/me/baby/'

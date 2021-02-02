@@ -6,3 +6,5 @@ entities and expose their functionality.
 """
 
 from .auth_session import SnooAuthSession
+
+__all__ = ['SnooAuthSession']

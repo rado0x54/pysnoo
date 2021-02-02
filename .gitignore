@@ -130,3 +130,5 @@ dmypy.json
 
 .coveralls.yml
 .idea/
+
+.snoo_token.txt

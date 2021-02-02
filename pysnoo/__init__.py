@@ -4,3 +4,5 @@
 Contains classes to authenticate against the Happiest Baby API and query various
 entities and expose their functionality.
 """
+
+from .auth_session import SnooAuthSession

@@ -3,18 +3,42 @@ import asyncio
 import logging
 import argparse
 import getpass
+import json
 
-from pysnoo.auth_session import SnooAuthSession
+from pysnoo import SnooAuthSession
 
 logging.basicConfig(level=logging.DEBUG)
 
 
-async def async_main(username, password, token):
+def get_token_updater(token_file):
+    """Return an token_updater function writing tokens to token_file"""
+    def token_updater(token):
+        with open(token_file, 'w') as outfile:
+            json.dump(token, outfile)
+    return token_updater
+
+
+def get_token(token_file):
+    """Read a token from a token_file (fails silently)"""
+    try:
+        with open(token_file) as infile:
+            token = json.load(infile)
+            return token
+    except FileNotFoundError:
+        pass
+    except ValueError:
+        pass
+
+
+async def async_main(username, password, token_file):
     """Async Main"""
-    print('Hello ...' + token)
-    async with SnooAuthSession() as auth:
-        new_token = await auth.fetch_token(username, password)
-        print('Token: {}'.format(new_token))
+    token_updater = get_token_updater(token_file)
+    async with SnooAuthSession(token=get_token(token_file), token_updater=token_updater) as auth:
+
+        if not auth.authorized:
+            # Init Auth
+            new_token = await auth.fetch_token(username, password)
+            token_updater(new_token)
 
         me_response = await auth.get('https://snoo-api.happiestbaby.com/us/me/')
         print('Me: {}'.format(await me_response.json()))
@@ -57,10 +81,11 @@ parser.add_argument('-p',
                     help='username for Snoo account')
 
 parser.add_argument('-t',
-                    '--token',
-                    type=str,
-                    dest='token',
-                    help='existing token for the Snoo account')
+                    '--tokenFile',
+                    metavar='file',
+                    default='.snoo_token.txt',
+                    dest='token_file',
+                    help='Cached token file to read and write an existing OAuth Token to.')
 
 args = parser.parse_args()
 _header()
@@ -72,4 +97,4 @@ if not args.password:
     args.password = getpass.getpass("Password: ")
 
 # Python 3.7+
-asyncio.run(async_main(args.username, args.password, args.token))
+asyncio.run(async_main(args.username, args.password, args.token_file))

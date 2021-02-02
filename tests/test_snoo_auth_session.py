@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """TestClass for the SnooAuthSession (and underlying OAuthBaseSession)"""
 import json
 

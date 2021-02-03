@@ -1,0 +1,88 @@
+{
+    "daySleep": 24536,
+    "levels": [
+        {
+            "isActive": false,
+            "sessionId": "1007201535",
+            "startTime": "2021-02-02 07:09:10.215",
+            "stateDuration": 8368,
+            "type": "asleep"
+        },
+        {
+            "isActive": false,
+            "sessionId": "1198573785",
+            "startTime": "2021-02-02 10:42:18.819",
+            "stateDuration": 58,
+            "type": "asleep"
+        },
+        {
+            "isActive": false,
+            "sessionId": "1198573785",
+            "startTime": "2021-02-02 10:43:16.818",
+            "stateDuration": 60,
+            "type": "soothing"
+        },
+        {
+            "isActive": false,
+            "sessionId": "1084856150",
+            "startTime": "2021-02-02 10:56:44.354",
+            "stateDuration": 51,
+            "type": "asleep"
+        },
+        {
+            "isActive": false,
+            "sessionId": "1084856150",
+            "startTime": "2021-02-02 10:57:35.960",
+            "stateDuration": 861,
+            "type": "soothing"
+        },
+        {
+            "isActive": false,
+            "sessionId": "1084856150",
+            "startTime": "2021-02-02 11:11:56.382",
+            "stateDuration": 8183,
+            "type": "asleep"
+        },
+        {
+            "isActive": false,
+            "sessionId": "1775941509",
+            "startTime": "2021-02-02 14:03:23.346",
+            "stateDuration": 17,
+            "type": "asleep"
+        },
+        {
+            "isActive": false,
+            "sessionId": "1775941509",
+            "startTime": "2021-02-02 14:03:40.608",
+            "stateDuration": 629,
+            "type": "soothing"
+        },
+        {
+            "isActive": false,
+            "sessionId": "1815566234",
+            "startTime": "2021-02-02 14:18:38.550",
+            "stateDuration": 4114,
+            "type": "asleep"
+        },
+        {
+            "isActive": false,
+            "sessionId": "1815566234",
+            "startTime": "2021-02-02 15:27:12.950",
+            "stateDuration": 480,
+            "type": "soothing"
+        },
+        {
+            "isActive": false,
+            "sessionId": "1815566234",
+            "startTime": "2021-02-02 15:35:12.960",
+            "stateDuration": 3745,
+            "type": "asleep"
+        }
+    ],
+    "longestSleep": 8368,
+    "naps": 4,
+    "nightSleep": 0,
+    "nightWakings": 0,
+    "timezone": null,
+    "totalSleep": 24536
+}

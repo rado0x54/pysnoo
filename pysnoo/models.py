@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from datetime import datetime, date, timedelta
 from enum import Enum
 
+from .const import DATETIME_FMT_AGGREGATED_SESSION
+
 
 # from: https://github.com/ctalkington/python-sonarr/blob/master/sonarr/models.py
 def dt_str_to_dt(dt_str: str) -> datetime:
@@ -257,4 +259,65 @@ class LastSession:
             end_time=dt_str_to_dt(data.get("endTime", None)),
             levels=[SessionLevel(item['level']) for item in data.get("levels", [])],
             start_time=dt_str_to_dt(data.get("startTime", None)),
+        )
+
+
+class SessionItemType(Enum):
+    """Enum for SessionItemType"""
+    ASLEEP = 'asleep'
+    SOOTHING = 'soothing'
+
+
+@dataclass(frozen=True)
+class AggregatedSessionItem:
+    """Return AggregatedSessionItem object from dict."""
+
+    is_active: bool
+    session_id: str
+    start_time: datetime
+    state_duration: timedelta
+    type: SessionItemType
+
+    @staticmethod
+    def from_dict(data: dict):
+        """Return AggregatedSessionItem object from dict."""
+
+        start_time = data.get("startTime")
+        if start_time is not None:
+            start_time = datetime.strptime(start_time, DATETIME_FMT_AGGREGATED_SESSION)
+
+        return AggregatedSessionItem(
+            is_active=data.get("isActive", False),
+            session_id=data.get("sessionId", ""),
+            start_time=start_time,
+            state_duration=timedelta(seconds=data.get("stateDuration", 0)),
+            type=SessionItemType(data.get("type"))
+        )
+
+
+@dataclass(frozen=True)
+class AggregatedSession:
+    """Return AggregatedSession object from dict."""
+
+    day_sleep: timedelta
+    levels: List[AggregatedSessionItem]
+    longest_sleep: timedelta
+    naps: int
+    night_sleep: timedelta
+    night_wakings: int
+    timezone: str
+    total_sleep: timedelta
+
+    @staticmethod
+    def from_dict(data: dict):
+        """Return AggregatedSession object from dict."""
+        return AggregatedSession(
+            day_sleep=timedelta(seconds=data.get("daySleep", 0)),
+            levels=[AggregatedSessionItem.from_dict(item) for item in data.get("levels", [])],
+            longest_sleep=timedelta(seconds=data.get("longestSleep", 0)),
+            naps=data.get("naps", 0),
+            night_sleep=timedelta(seconds=data.get("nightSleep", 0)),
+            night_wakings=data.get("nightWakings", 0),
+            timezone=data.get("timezone"),
+            total_sleep=timedelta(seconds=data.get("totalSleep", 0)),
         )

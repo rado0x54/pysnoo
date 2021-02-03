@@ -19,7 +19,10 @@ from .models import (User,
                      MinimalLevel,
                      Sex,
                      LastSession,
-                     SessionLevel)
+                     SessionLevel,
+                     AggregatedSession,
+                     AggregatedSessionItem,
+                     SessionItemType)
 
 __all__ = ['SnooAuthSession',
            'Snoo',
@@ -35,4 +38,7 @@ __all__ = ['SnooAuthSession',
            'MinimalLevel',
            'Sex',
            'LastSession',
-           'SessionLevel']
+           'SessionLevel',
+           'AggregatedSession',
+           'AggregatedSessionItem',
+           'SessionItemType']

@@ -9,7 +9,9 @@ from pysnoo import (User, Device, Baby, LastSession,
                     MinimalLevelVolume,
                     SoothingLevelVolume,
                     MinimalLevel,
-                    SessionLevel)
+                    SessionLevel,
+                    AggregatedSession,
+                    SessionItemType)
 
 
 from .helpers import load_fixture
@@ -99,3 +101,27 @@ class TestSnooModels(TestCase):
             SessionLevel.LEVEL4,
             SessionLevel.ONLINE
         ])
+
+    def test_aggregated_session_mapping(self):
+        """Test successful mapping from json payload"""
+        aggregated_session_payload = json.loads(load_fixture('', 'ss_v2_sessions_aggregated__get_200.json'))
+        aggregated_session = AggregatedSession.from_dict(aggregated_session_payload)
+
+        self.assertEqual(aggregated_session.day_sleep, timedelta(seconds=aggregated_session_payload['daySleep']))
+        self.assertEqual(aggregated_session.longest_sleep,
+                         timedelta(seconds=aggregated_session_payload['longestSleep']))
+        self.assertEqual(aggregated_session.naps, aggregated_session_payload['naps'])
+        self.assertEqual(aggregated_session.night_sleep, timedelta(seconds=aggregated_session_payload['nightSleep']))
+        self.assertEqual(aggregated_session.night_wakings, aggregated_session_payload['nightWakings'])
+        self.assertEqual(aggregated_session.timezone, aggregated_session_payload['timezone'])
+        self.assertEqual(aggregated_session.total_sleep, timedelta(seconds=aggregated_session_payload['totalSleep']))
+
+        # Levels:
+        self.assertEqual(len(aggregated_session.levels), len(aggregated_session_payload['levels']))
+        for session_item, session_item_payload in zip(aggregated_session.levels, aggregated_session_payload['levels']):
+            self.assertEqual(session_item.is_active, session_item_payload['isActive'])
+            self.assertEqual(session_item.session_id, session_item_payload['sessionId'])
+            self.assertEqual(session_item.start_time,
+                             datetime.strptime(session_item_payload['startTime'], "%Y-%m-%d %H:%M:%S.%f"))
+            self.assertEqual(session_item.state_duration, timedelta(seconds=session_item_payload['stateDuration']))
+            self.assertEqual(session_item.type, SessionItemType(session_item_payload['type']))

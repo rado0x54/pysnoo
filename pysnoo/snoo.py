@@ -1,18 +1,21 @@
 """The main API class"""
 from typing import List, Optional
-from datetime import date
+from datetime import date, datetime
 
 from .const import (SNOO_ME_ENDPOINT,
                     SNOO_DEVICES_ENDPOINT,
                     SNOO_BABY_ENDPOINT,
-                    SNOO_SESSIONS_LAST_ENDPOINT)
+                    SNOO_SESSIONS_LAST_ENDPOINT,
+                    SNOO_SESSIONS_AGGREGATED_ENDPOINT,
+                    DATETIME_FMT_AGGREGATED_SESSION)
 from .auth_session import SnooAuthSession
 from .models import (User, Device, Baby, Sex,
                      MinimalLevel,
                      MinimalLevelVolume,
                      ResponsivenessLevel,
                      SoothingLevelVolume,
-                     LastSession)
+                     LastSession,
+                     AggregatedSession)
 
 
 class Snoo:
@@ -45,6 +48,21 @@ class Snoo:
         async with self.auth.get(SNOO_SESSIONS_LAST_ENDPOINT) as resp:
             assert resp.status == 200
             return LastSession.from_dict(await resp.json())
+
+    async def get_aggregated_session(self, start_time: datetime) -> AggregatedSession:
+        """Return Information about the aggregated session
+
+        This function returns information about the next 24h segment beginning from start_time.
+        Note, start_time does not contain or respect a timezone property, but it will assume the
+        timezone that is configured server-side.
+        """
+        url_params = {
+            'startTime': start_time.strftime(DATETIME_FMT_AGGREGATED_SESSION)[:-3]
+        }
+        async with self.auth.get(SNOO_SESSIONS_AGGREGATED_ENDPOINT,
+                                 params=url_params) as resp:
+            assert resp.status == 200
+            return AggregatedSession.from_dict(await resp.json())
 
     async def set_baby_info(self,
                             baby_name: str,

@@ -4,7 +4,7 @@ import logging
 import argparse
 import getpass
 import json
-from datetime import date
+from datetime import date, datetime
 
 from pysnoo import SnooAuthSession, Snoo
 from pysnoo.const import SNOO_BABY_ENDPOINT
@@ -34,6 +34,12 @@ async def async_main(username, password, token, token_updater):
         print(f'{last_session}')
         # baby = await snoo.set_baby_info('John 3', date(2021, 1, 18), 6, None)
         # print(f'{baby}')
+        # aggregated_session = await snoo.get_aggregated_session(datetime(2021, 2, 2, 7, 0, 0))
+        # print(f'{aggregated_session}')
+        aggregated_session = await snoo.get_aggregated_session(datetime(2021, 2, 2, 13, 30, 0))
+        print(f'{aggregated_session}')
+
+
 
         async with auth.get(SNOO_BABY_ENDPOINT) as response:
             json_body = await response.json()

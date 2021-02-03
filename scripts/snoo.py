@@ -1,18 +1,55 @@
-"""Snoo CLI Tool"""
+#!/usr/bin/env python
+"""Command line tool for interacting with the Snoo Bassinet API"""
 import asyncio
 import logging
 import argparse
 import getpass
 import json
+from pprint import pprint
+
+from typing import Callable
 from datetime import datetime
 
 from pysnoo import SnooAuthSession, Snoo
-from pysnoo.const import SNOO_BABY_ENDPOINT
 
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 
+async def user(snoo: Snoo):
+    user = await snoo.get_me()
+    pprint(user.to_dict())
 
-async def async_main(username, password, token, token_updater):
+async def device(snoo: Snoo):
+    devices = await snoo.get_devices()
+    if (len(devices) > 0):
+        pprint(devices[0].to_dict())
+
+async def baby(snoo: Snoo):
+    baby = await snoo.get_baby()
+    pprint(baby.to_dict())
+
+async def last_session(snoo: Snoo):
+    last_session = await snoo.get_last_session()
+    pprint(last_session.to_dict())
+
+async def status(snoo: Snoo):
+    last_session = await snoo.get_last_session()
+    print(f'{last_session.current_status.value} (since: {last_session.current_status_duration})')
+
+async def session(snoo: Snoo):
+    session = await snoo.get_aggregated_session(datetime(2021,2,2,7,0,0))
+    pprint(session.to_dict())
+
+# Function Dictionary
+functions = {
+    'user': user,
+    'device': device,
+    'baby': baby,
+    'last_session': last_session,
+    'status': status,
+    'session': session
+}
+
+async def async_main(username, password, token, token_updater, func: Callable[[Snoo], None]):
     """Async Main"""
 
     async with SnooAuthSession(token, token_updater) as auth:
@@ -23,32 +60,25 @@ async def async_main(username, password, token, token_updater):
             token_updater(new_token)
 
         snoo = Snoo(auth)
+        await func(snoo)
 
-        user = await snoo.get_me()
-        print(f'{user}')
-        devices = await snoo.get_devices()
-        print(f'{devices}')
-        baby = await snoo.get_baby()
-        print(f'{baby}')
-        last_session = await snoo.get_last_session()
-        print(f'{last_session}')
         # baby = await snoo.set_baby_info('John 3', date(2021, 1, 18), 6, None)
         # print(f'{baby}')
-        # aggregated_session = await snoo.get_aggregated_session(datetime(2021, 2, 2, 7, 0, 0))
+        # # aggregated_session = await snoo.get_aggregated_session(datetime(2021, 2, 2, 7, 0, 0))
+        # # print(f'{aggregated_session}')
+        # aggregated_session = await snoo.get_aggregated_session(datetime(2021, 2, 2, 13, 30, 0))
         # print(f'{aggregated_session}')
-        aggregated_session = await snoo.get_aggregated_session(datetime(2021, 2, 2, 13, 30, 0))
-        print(f'{aggregated_session}')
-        aggregated_session_avg = await snoo.get_aggregated_session_avg(baby.baby, datetime(2021, 1, 21, 0, 0, 0))
-        print(f'{aggregated_session_avg}')
-        aggregated_session_avg = await snoo.get_aggregated_session_avg(baby.baby,
-                                                                       datetime(2021, 1, 21, 0, 0, 0), days=False)
-        print(f'{aggregated_session_avg}')
-        total_time = await snoo.get_session_total_time(baby.baby)
-        print(f'{total_time}')
+        # aggregated_session_avg = await snoo.get_aggregated_session_avg(baby.baby, datetime(2021, 1, 21, 0, 0, 0))
+        # print(f'{aggregated_session_avg}')
+        # aggregated_session_avg = await snoo.get_aggregated_session_avg(baby.baby,
+        #                                                                datetime(2021, 1, 21, 0, 0, 0), days=False)
+        # print(f'{aggregated_session_avg}')
+        # total_time = await snoo.get_session_total_time(baby.baby)
+        # print(f'{total_time}')
 
-        async with auth.get(SNOO_BABY_ENDPOINT) as response:
-            json_body = await response.json()
-            print(json_body)
+        # async with auth.get(SNOO_BABY_ENDPOINT) as response:
+        #     json_body = await response.json()
+        #     print(json_body)
 
 
         # async with auth.get("https://httpbin.org/headers") as r:
@@ -102,6 +132,10 @@ def main():
         epilog='https://github.com/rado0x54/pysnoo',
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
+    parser.add_argument(
+        'command', default='user', choices=['user', 'device', 'baby', 'last_session', 'status', 'session']
+    )
+
     parser.add_argument('-u',
                         '--username',
                         dest='username',
@@ -134,9 +168,8 @@ def main():
 
     token_updater = get_token_updater(args.token_file)
 
-
     # Python 3.7+
-    asyncio.run(async_main(args.username, args.password, token, token_updater))
+    asyncio.run(async_main(args.username, args.password, token, token_updater, functions[args.command]))
 
 
 if __name__ == "__main__":

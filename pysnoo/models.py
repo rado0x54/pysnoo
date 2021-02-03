@@ -2,7 +2,7 @@
 """PySnoo Data Models."""
 from typing import List, Optional
 from dataclasses import dataclass
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from enum import Enum
 
 from .const import DATETIME_FMT_AGGREGATED_SESSION
@@ -35,6 +35,14 @@ def dt_str_to_dt(dt_str: str) -> datetime:
     return datetime.strptime(dt_str, fmt)
 
 
+def dt_to_dt_str(dt_value: datetime) -> str:
+    """Convert datetime object to ISO-8601 datetime string object."""
+    if dt_value is None:
+        return None
+
+    return dt_value.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+
+
 @dataclass(frozen=True)
 class User:
     """Object holding the user information from Snoo."""
@@ -56,6 +64,16 @@ class User:
             user_id=data.get("userId", ""),
         )
 
+    def to_dict(self):
+        """Return dict from Object"""
+        return {
+            "email": self.email,
+            "givenName": self.given_name,
+            "region": self.region,
+            "surname": self.surname,
+            "userId": self.user_id
+        }
+
 
 @dataclass(frozen=True)
 class SSID:
@@ -71,6 +89,13 @@ class SSID:
             name=data.get("name", ""),
             updated_at=dt_str_to_dt(data.get("updatedAt", None))
         )
+
+    def to_dict(self):
+        """Return dict from Object"""
+        return {
+            "name": self.name,
+            "updatedAt": dt_to_dt_str(self.updated_at)
+        }
 
 
 @dataclass(frozen=True)
@@ -101,6 +126,20 @@ class Device:
             updated_at=dt_str_to_dt(data.get("updatedAt", None)),
         )
 
+    def to_dict(self):
+        """Return dict from Object"""
+        return {
+            "baby": self.baby,
+            "createdAt": dt_to_dt_str(self.created_at),
+            "firmwareUpdateDate": dt_to_dt_str(self.firmware_update_date),
+            "firmwareVersion": self.firmware_version,
+            "lastProvisionSuccess": dt_to_dt_str(self.last_provision_success),
+            "lastSSID": self.last_ssid.to_dict(),
+            "serialNumber": self.serial_number,
+            "timezone": self.timezone,
+            "updatedAt": dt_to_dt_str(self.updated_at)
+        }
+
 
 @dataclass(frozen=True)
 class Picture:
@@ -120,6 +159,15 @@ class Picture:
             encoded=data.get("encoded", False),
             updated_at=dt_str_to_dt(data.get("updatedAt", None)),
         )
+
+    def to_dict(self):
+        """Return dict from Object"""
+        return {
+            "id": self.id,
+            "mime": self.mime,
+            "encoded": self.encoded,
+            "updatedAt": dt_to_dt_str(self.updated_at)
+        }
 
 
 class ResponsivenessLevel(Enum):
@@ -165,9 +213,9 @@ class Settings:
     """Object holding Snoo Settings information."""
 
     responsiveness_level: ResponsivenessLevel
-    minimal_level_volume: str
-    soothing_level_volume: str
-    minimal_level: str
+    minimal_level_volume: MinimalLevelVolume
+    soothing_level_volume: SoothingLevelVolume
+    minimal_level: MinimalLevel
     motion_limiter: bool
     weaning: bool
     car_ride_mode: bool
@@ -189,6 +237,20 @@ class Settings:
             offline_lock=data.get("offlineLock", False),
             daytime_start=data.get("daytimeStart", 7)
         )
+
+    def to_dict(self):
+        """Return dict from Object"""
+        return {
+            "responsivenessLevel": self.responsiveness_level.value,
+            "minimalLevelVolume": self.minimal_level_volume.value,
+            "soothingLevelVolume": self.soothing_level_volume.value,
+            "minimalLevel": self.minimal_level.value,
+            "motionLimiter": self.motion_limiter,
+            "weaning": self.weaning,
+            "carRideMode": self.car_ride_mode,
+            "offlineLock": self.offline_lock,
+            "daytimeStart": self.daytime_start
+        }
 
 
 @dataclass(frozen=True)
@@ -224,21 +286,49 @@ class Baby:
             disabled_limiter=data.get("disabledLimiter", False),
             pictures=[Picture.from_dict(p) for p in data.get("pictures", [])],
             settings=Settings.from_dict(data.get("settings", {})),
-            preemie=data.get("preemie", None),
-            sex=data.get("sex", None),
+            preemie=data.get("preemie"),
+            sex=data.get("sex"),
             updated_at=dt_str_to_dt(data.get("updatedAt", None)),
             updated_by_user_at=dt_str_to_dt(data.get("updatedByUserAt", None)),
         )
+
+    def to_dict(self):
+        """Return dict from Object"""
+        birth_date = self.birth_date
+        if birth_date is not None:
+            birth_date = birth_date.isoformat()
+
+        return {
+            "baby": self.baby,
+            "babyName": self.baby_name,
+            "birthDate": birth_date,
+            "createdAt": dt_to_dt_str(self.created_at),
+            "disabledLimiter": self.disabled_limiter,
+            "pictures": [item.to_dict() for item in self.pictures],
+            "settings": self.settings.to_dict(),
+            "preemie": self.preemie,
+            "sex": self.sex,
+            "updatedAt": dt_to_dt_str(self.updated_at),
+            "updatedByUserAt": dt_to_dt_str(self.updated_by_user_at),
+        }
 
 
 class SessionLevel(Enum):
     """Enum for SessionLevel"""
     ONLINE = 'ONLINE'
     BASELINE = 'BASELINE'
+    WEANING_BASELINE = 'WEANING_BASELINE'
     LEVEL1 = 'LEVEL1'
     LEVEL2 = 'LEVEL2'
     LEVEL3 = 'LEVEL3'
     LEVEL4 = 'LEVEL4'
+
+
+class SessionItemType(Enum):
+    """Enum for SessionItemType"""
+    ASLEEP = 'asleep'
+    SOOTHING = 'soothing'
+    AWAKE = 'awake'
 
 
 @dataclass(frozen=True)
@@ -250,9 +340,23 @@ class LastSession:
     start_time: datetime
 
     @property
-    def duration(self) -> timedelta:
-        """Return the duration of the last session"""
-        return self.end_time - self.start_time
+    def current_status_duration(self) -> timedelta:
+        """Return the duration spent in current status"""
+        if self.end_time:
+            return datetime.now(timezone.utc) - self.end_time
+
+        return datetime.now(timezone.utc) - self.start_time
+
+    @property
+    def current_status(self) -> SessionItemType:
+        """Return the current status"""
+        if self.end_time:
+            return SessionItemType.AWAKE
+
+        if self.levels[-1] in [SessionLevel.BASELINE, SessionLevel.WEANING_BASELINE]:
+            return SessionItemType.ASLEEP
+
+        return SessionItemType.SOOTHING
 
     @staticmethod
     def from_dict(data: dict):
@@ -263,11 +367,16 @@ class LastSession:
             start_time=dt_str_to_dt(data.get("startTime", None)),
         )
 
+    def to_dict(self):
+        """Return dict from Object"""
 
-class SessionItemType(Enum):
-    """Enum for SessionItemType"""
-    ASLEEP = 'asleep'
-    SOOTHING = 'soothing'
+        return {
+            "endTime": dt_to_dt_str(self.end_time),
+            "levels": [item.value for item in self.levels],
+            "startTime": dt_to_dt_str(self.start_time),
+            "currentStatus": self.current_status.value,
+            "currentStatusDuration": str(self.current_status_duration)
+        }
 
 
 @dataclass(frozen=True)
@@ -296,6 +405,16 @@ class AggregatedSessionItem:
             type=SessionItemType(data.get("type"))
         )
 
+    def to_dict(self):
+        """Return dict from Object"""
+        return {
+            "isActive": self.is_active,
+            "sessionId": self.session_id,
+            "startTime": dt_to_dt_str(self.start_time),
+            "stateDuration": str(self.state_duration),
+            "type": self.type.value
+        }
+
 
 @dataclass(frozen=True)
 class AggregatedSession:
@@ -323,6 +442,12 @@ class AggregatedSession:
             timezone=data.get("timezone"),
             total_sleep=timedelta(seconds=data.get("totalSleep", 0)),
         )
+
+    def to_dict(self):
+        """Return dict from Object"""
+        return {
+            "daySleep": str(self.day_sleep),
+        }
 
 
 class AggregatedSessionInterval(Enum):

@@ -11,7 +11,8 @@ from pysnoo import (User, Device, Baby, LastSession,
                     MinimalLevel,
                     SessionLevel,
                     AggregatedSession,
-                    SessionItemType)
+                    SessionItemType,
+                    AggregatedSessionAvg)
 
 
 from .helpers import load_fixture
@@ -54,6 +55,7 @@ class TestSnooModels(TestCase):
         baby_payload = json.loads(load_fixture('', 'us_v3_me_baby__get_200.json'))
         baby = Baby.from_dict(baby_payload)
 
+        self.assertEqual(baby.baby, baby_payload['_id'])
         self.assertEqual(baby.baby_name, baby_payload['babyName'])
         self.assertEqual(baby.birth_date, datetime.strptime(baby_payload['birthDate'], "%Y-%m-%dT%H:%M:%S.%f%z").date())
         self.assertEqual(baby.created_at, datetime.strptime(baby_payload['createdAt'], "%Y-%m-%dT%H:%M:%S.%f%z"))
@@ -125,3 +127,31 @@ class TestSnooModels(TestCase):
                              datetime.strptime(session_item_payload['startTime'], "%Y-%m-%d %H:%M:%S.%f"))
             self.assertEqual(session_item.state_duration, timedelta(seconds=session_item_payload['stateDuration']))
             self.assertEqual(session_item.type, SessionItemType(session_item_payload['type']))
+
+    def test_aggregated_session_avg_mapping(self):
+        """Test successful mapping from json payload"""
+        aggregated_session_avg_payload = json.loads(
+            load_fixture('', 'ss_v2_babies_sessions_aggregated_avg__get_200.json'))
+        aggregated_session_avg = AggregatedSessionAvg.from_dict(aggregated_session_avg_payload)
+
+        self.assertEqual(aggregated_session_avg.total_sleep_avg,
+                         timedelta(seconds=aggregated_session_avg_payload['totalSleepAVG']))
+        self.assertEqual(aggregated_session_avg.day_sleep_avg,
+                         timedelta(seconds=aggregated_session_avg_payload['daySleepAVG']))
+        self.assertEqual(aggregated_session_avg.night_sleep_avg,
+                         timedelta(seconds=aggregated_session_avg_payload['nightSleepAVG']))
+        self.assertEqual(aggregated_session_avg.longest_sleep_avg,
+                         timedelta(seconds=aggregated_session_avg_payload['longestSleepAVG']))
+        self.assertEqual(aggregated_session_avg.night_wakings_avg,
+                         aggregated_session_avg_payload['nightWakingsAVG'])
+        self.assertIsNotNone(aggregated_session_avg.days)
+        self.assertEqual(aggregated_session_avg.days.total_sleep,
+                         [timedelta(seconds=item) for item in aggregated_session_avg_payload['days']['totalSleep']])
+        self.assertEqual(aggregated_session_avg.days.day_sleep,
+                         [timedelta(seconds=item) for item in aggregated_session_avg_payload['days']['daySleep']])
+        self.assertEqual(aggregated_session_avg.days.night_sleep,
+                         [timedelta(seconds=item) for item in aggregated_session_avg_payload['days']['nightSleep']])
+        self.assertEqual(aggregated_session_avg.days.longest_sleep,
+                         [timedelta(seconds=item) for item in aggregated_session_avg_payload['days']['longestSleep']])
+        self.assertEqual(aggregated_session_avg.days.night_wakings,
+                         aggregated_session_avg_payload['days']['nightWakings'])

@@ -21,5 +21,7 @@ SNOO_DEVICES_ENDPOINT = SNOO_API_URI + '/ds/me/devices/'
 SNOO_BABY_ENDPOINT = SNOO_API_URI + '/us/v3/me/baby/'
 SNOO_SESSIONS_LAST_ENDPOINT = SNOO_API_URI + '/ss/v2/sessions/last/'
 SNOO_SESSIONS_AGGREGATED_ENDPOINT = SNOO_API_URI + '/ss/v2/sessions/aggregated/'
+SNOO_SESSIONS_AGGREGATED_AVG_ENDPOINT = SNOO_API_URI + '/ss/v2/babies/{}/sessions/aggregated/avg/'
+SNOO_SESSIONS_TOTAL_TIME_ENDPOINT = SNOO_API_URI + '/ss/v2/babies/{}/sessions/total-time/'
 
 DATETIME_FMT_AGGREGATED_SESSION = '%Y-%m-%d %H:%M:%S.%f'

@@ -1,12 +1,14 @@
 """The main API class"""
 from typing import List, Optional
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from .const import (SNOO_ME_ENDPOINT,
                     SNOO_DEVICES_ENDPOINT,
                     SNOO_BABY_ENDPOINT,
                     SNOO_SESSIONS_LAST_ENDPOINT,
                     SNOO_SESSIONS_AGGREGATED_ENDPOINT,
+                    SNOO_SESSIONS_AGGREGATED_AVG_ENDPOINT,
+                    SNOO_SESSIONS_TOTAL_TIME_ENDPOINT,
                     DATETIME_FMT_AGGREGATED_SESSION)
 from .auth_session import SnooAuthSession
 from .models import (User, Device, Baby, Sex,
@@ -15,7 +17,9 @@ from .models import (User, Device, Baby, Sex,
                      ResponsivenessLevel,
                      SoothingLevelVolume,
                      LastSession,
-                     AggregatedSession)
+                     AggregatedSession,
+                     AggregatedSessionAvg,
+                     AggregatedSessionInterval)
 
 
 class Snoo:
@@ -63,6 +67,41 @@ class Snoo:
                                  params=url_params) as resp:
             assert resp.status == 200
             return AggregatedSession.from_dict(await resp.json())
+
+    async def get_aggregated_session_avg(self,
+                                         baby: str,
+                                         start_time: datetime,
+                                         interval: AggregatedSessionInterval = AggregatedSessionInterval.WEEK,
+                                         days: bool = True) -> AggregatedSessionAvg:
+        """Return Information about the aggregated session averages
+
+        :param baby: ID of baby to get average for
+        :param start_time: start_time of the interval (time is ignored)
+        :param interval: week/month calculate average for a week or month interval
+        :param days: true/false Include value for each day in response payload
+        :return:
+        """
+        url_params = {
+            'startTime': start_time.strftime(DATETIME_FMT_AGGREGATED_SESSION)[:-3],
+            'interval': interval.value,
+            'days': str(days).lower(),
+        }
+        async with self.auth.get(SNOO_SESSIONS_AGGREGATED_AVG_ENDPOINT.format(baby),
+                                 params=url_params) as resp:
+            assert resp.status == 200
+            return AggregatedSessionAvg.from_dict(await resp.json())
+
+    async def get_session_total_time(self,
+                                     baby: str) -> timedelta:
+        """Return Information about the total usage of a Snoo
+
+        :param baby: ID of baby to get the total time for
+        :return:
+        """
+        async with self.auth.get(SNOO_SESSIONS_TOTAL_TIME_ENDPOINT.format(baby)) as resp:
+            assert resp.status == 200
+            resp_json = await resp.json()
+            return timedelta(seconds=resp_json.get('totalTime', 0))
 
     async def set_baby_info(self,
                             baby_name: str,

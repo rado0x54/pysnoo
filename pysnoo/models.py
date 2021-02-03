@@ -1,6 +1,6 @@
 # coding: utf-8
 """PySnoo Data Models."""
-from typing import List
+from typing import List, Optional
 from dataclasses import dataclass
 from datetime import datetime, date, timedelta
 from enum import Enum
@@ -76,7 +76,7 @@ class SSID:
 @dataclass(frozen=True)
 class Device:
     """Object holding Snoo device information."""
-    baby: str
+    baby: str  # ID of baby
     created_at: datetime
     firmware_update_date: datetime
     firmware_version: str
@@ -195,6 +195,7 @@ class Settings:
 class Baby:
     """Return baby object from dict."""
 
+    baby: str  # ID of baby
     baby_name: str
     birth_date: date
     created_at: datetime
@@ -216,6 +217,7 @@ class Baby:
             birth_date = birth_date.date()
 
         return Baby(
+            baby=data.get("_id", ""),
             baby_name=data.get("babyName", ""),
             birth_date=birth_date,
             created_at=dt_str_to_dt(data.get("createdAt", None)),
@@ -320,4 +322,58 @@ class AggregatedSession:
             night_wakings=data.get("nightWakings", 0),
             timezone=data.get("timezone"),
             total_sleep=timedelta(seconds=data.get("totalSleep", 0)),
+        )
+
+
+class AggregatedSessionInterval(Enum):
+    """Enum for AggregatedSessionInterval"""
+    WEEK = 'week'
+    MONTH = 'month'
+
+
+@dataclass(frozen=True)
+class AggregatedDays:
+    """Return AggregatedDays object from dict."""
+    total_sleep: List[timedelta]
+    day_sleep: List[timedelta]
+    night_sleep: List[timedelta]
+    longest_sleep: List[timedelta]
+    night_wakings: List[int]
+
+    @staticmethod
+    def from_dict(data: dict):
+        """Return AggregatedDays object from dict."""
+        if data is None:
+            return None
+
+        return AggregatedDays(
+            total_sleep=[timedelta(seconds=item) for item in data.get("totalSleep", [])],
+            day_sleep=[timedelta(seconds=item) for item in data.get("daySleep", [])],
+            night_sleep=[timedelta(seconds=item) for item in data.get("nightSleep", [])],
+            longest_sleep=[timedelta(seconds=item) for item in data.get("longestSleep", [])],
+            night_wakings=data.get("nightWakings", [])
+        )
+
+
+@dataclass(frozen=True)
+class AggregatedSessionAvg:
+    """Return AggregatedSessionAvg object from dict."""
+
+    total_sleep_avg: timedelta
+    day_sleep_avg: timedelta
+    night_sleep_avg: timedelta
+    longest_sleep_avg: timedelta
+    night_wakings_avg: float
+    days: Optional[AggregatedDays]
+
+    @staticmethod
+    def from_dict(data: dict):
+        """Return AggregatedSessionAvg object from dict."""
+        return AggregatedSessionAvg(
+            total_sleep_avg=timedelta(seconds=data.get("totalSleepAVG", 0)),
+            day_sleep_avg=timedelta(seconds=data.get("daySleepAVG", 0)),
+            night_sleep_avg=timedelta(seconds=data.get("nightSleepAVG", 0)),
+            longest_sleep_avg=timedelta(seconds=data.get("longestSleepAVG", 0)),
+            night_wakings_avg=data.get("nightWakingsAVG", 0.0),
+            days=AggregatedDays.from_dict(data.get("days")),
         )

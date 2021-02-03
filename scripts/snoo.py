@@ -30,8 +30,10 @@ async def async_main(username, password, token, token_updater):
         print(f'{devices}')
         baby = await snoo.get_baby()
         print(f'{baby}')
-        baby = await snoo.set_baby_info('John 3', date(2021, 1, 18), 6, None)
-        print(f'{baby}')
+        last_session = await snoo.get_last_session()
+        print(f'{last_session}')
+        # baby = await snoo.set_baby_info('John 3', date(2021, 1, 18), 6, None)
+        # print(f'{baby}')
 
         async with auth.get(SNOO_BABY_ENDPOINT) as response:
             json_body = await response.json()

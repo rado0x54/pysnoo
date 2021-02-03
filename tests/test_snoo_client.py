@@ -3,13 +3,15 @@ import json
 from datetime import date
 
 from asynctest import TestCase, patch, CoroutineMock
-from pysnoo.const import SNOO_ME_ENDPOINT, SNOO_DEVICES_ENDPOINT, SNOO_BABY_ENDPOINT
+from pysnoo.const import (SNOO_ME_ENDPOINT, SNOO_DEVICES_ENDPOINT, SNOO_BABY_ENDPOINT,
+                          SNOO_SESSIONS_LAST_ENDPOINT)
 from pysnoo import (SnooAuthSession, Snoo,
                     MinimalLevel,
                     MinimalLevelVolume,
                     ResponsivenessLevel,
                     SoothingLevelVolume,
-                    User, Device, Baby, Sex)
+                    User, Device, Baby, Sex,
+                    LastSession)
 
 from tests.helpers import load_fixture, get_token
 
@@ -66,6 +68,31 @@ class TestSnooClient(TestCase):
 
             # Check Response
             self.assertEqual(devices, [Device.from_dict(devices_json[0])])
+
+    @patch('aiohttp.client.ClientSession._request')
+    async def test_get_last_session(self, mocked_request):
+        """Test the successful GET /ss/v2/sessions/last endpoint"""
+        # Setup
+        token, _ = get_token()
+        last_session_json = json.loads(load_fixture('', 'ss_v2_sessions_last__get_200.json'))
+        mocked_request.return_value.json = CoroutineMock(side_effect=[last_session_json])
+        mocked_request.return_value.status = 200
+
+        async with SnooAuthSession(token) as session:
+            snoo = Snoo(session)
+            # Test
+            last_session = await snoo.get_last_session()
+
+            # Check Request
+            mocked_request.assert_called_once_with(
+                'GET', SNOO_SESSIONS_LAST_ENDPOINT,
+                data=None,
+                allow_redirects=True,
+                # Base Headers are only added in _request, which is mocked.
+                headers={'Authorization': 'Bearer {}'.format(token['access_token'])})
+
+            # Check Response
+            self.assertEqual(last_session, LastSession.from_dict(last_session_json))
 
     @patch('aiohttp.client.ClientSession._request')
     async def test_get_baby(self, mocked_request):

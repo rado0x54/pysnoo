@@ -1,0 +1,30 @@
+{
+    "endTime": "2020-11-21T03:50:43.025Z",
+    "levels": [
+        {
+            "level": "BASELINE"
+        },
+        {
+            "level": "LEVEL1"
+        },
+        {
+            "level": "LEVEL2"
+        },
+        {
+            "level": "LEVEL2"
+        },
+        {
+            "level": "LEVEL2"
+        },
+        {
+            "level": "LEVEL3"
+        },
+        {
+            "level": "LEVEL4"
+        },
+        {
+            "level": "ONLINE"
+        }
+    ],
+    "startTime": "2020-11-21T03:50:06.296Z"
+}

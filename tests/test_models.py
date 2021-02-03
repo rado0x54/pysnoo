@@ -2,15 +2,14 @@
 
 import json
 from unittest import TestCase
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from pysnoo import (User,
-                    Device,
-                    Baby,
+from pysnoo import (User, Device, Baby, LastSession,
                     ResponsivenessLevel,
                     MinimalLevelVolume,
                     SoothingLevelVolume,
-                    MinimalLevel)
+                    MinimalLevel,
+                    SessionLevel)
 
 
 from .helpers import load_fixture
@@ -30,7 +29,7 @@ class TestSnooModels(TestCase):
         self.assertEqual(user.surname, user_payload['surname'])
         self.assertEqual(user.user_id, user_payload['userId'])
 
-    def test_user_device_mapping(self):
+    def test_device_mapping(self):
         """Test successful mapping from json payload"""
         device_payload = json.loads(load_fixture('', 'ds_me_devices__get_200.json'))[0]
         device = Device.from_dict(device_payload)
@@ -48,7 +47,7 @@ class TestSnooModels(TestCase):
         self.assertEqual(device.serial_number, device_payload['serialNumber'])
         self.assertEqual(device.updated_at, datetime.strptime(device_payload['updatedAt'], "%Y-%m-%dT%H:%M:%S.%f%z"))
 
-    def test_user_baby_mapping(self):
+    def test_baby_mapping(self):
         """Test successful mapping from json payload"""
         baby_payload = json.loads(load_fixture('', 'us_v3_me_baby__get_200.json'))
         baby = Baby.from_dict(baby_payload)
@@ -79,3 +78,24 @@ class TestSnooModels(TestCase):
         self.assertEqual(baby.updated_at, datetime.strptime(baby_payload['updatedAt'], "%Y-%m-%dT%H:%M:%S.%f%z"))
         self.assertEqual(baby.updated_by_user_at,
                          datetime.strptime(baby_payload['updatedByUserAt'], "%Y-%m-%dT%H:%M:%S.%f%z"))
+
+    def test_last_session_mapping(self):
+        """Test successful mapping from json payload"""
+        last_session_payload = json.loads(load_fixture('', 'ss_v2_sessions_last__get_200.json'))
+        last_session = LastSession.from_dict(last_session_payload)
+
+        self.assertEqual(last_session.start_time,
+                         datetime.strptime(last_session_payload['startTime'], "%Y-%m-%dT%H:%M:%S.%f%z"))
+        self.assertEqual(last_session.end_time,
+                         datetime.strptime(last_session_payload['endTime'], "%Y-%m-%dT%H:%M:%S.%f%z"))
+        self.assertEqual(last_session.duration, timedelta(seconds=36, milliseconds=729))
+        self.assertEqual(last_session.levels, [
+            SessionLevel.BASELINE,
+            SessionLevel.LEVEL1,
+            SessionLevel.LEVEL2,
+            SessionLevel.LEVEL2,
+            SessionLevel.LEVEL2,
+            SessionLevel.LEVEL3,
+            SessionLevel.LEVEL4,
+            SessionLevel.ONLINE
+        ])

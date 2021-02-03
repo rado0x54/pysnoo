@@ -2,7 +2,7 @@
 """PySnoo Data Models."""
 from typing import List
 from dataclasses import dataclass
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from enum import Enum
 
 
@@ -224,4 +224,37 @@ class Baby:
             sex=data.get("sex", None),
             updated_at=dt_str_to_dt(data.get("updatedAt", None)),
             updated_by_user_at=dt_str_to_dt(data.get("updatedByUserAt", None)),
+        )
+
+
+class SessionLevel(Enum):
+    """Enum for SessionLevel"""
+    ONLINE = 'ONLINE'
+    BASELINE = 'BASELINE'
+    LEVEL1 = 'LEVEL1'
+    LEVEL2 = 'LEVEL2'
+    LEVEL3 = 'LEVEL3'
+    LEVEL4 = 'LEVEL4'
+
+
+@dataclass(frozen=True)
+class LastSession:
+    """Return LastSession object from dict."""
+
+    end_time: datetime
+    levels: List[SessionLevel]
+    start_time: datetime
+
+    @property
+    def duration(self) -> timedelta:
+        """Return the duration of the last session"""
+        return self.end_time - self.start_time
+
+    @staticmethod
+    def from_dict(data: dict):
+        """Return LastSession object from dict."""
+        return LastSession(
+            end_time=dt_str_to_dt(data.get("endTime", None)),
+            levels=[SessionLevel(item['level']) for item in data.get("levels", [])],
+            start_time=dt_str_to_dt(data.get("startTime", None)),
         )

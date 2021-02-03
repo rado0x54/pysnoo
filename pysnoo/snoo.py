@@ -4,16 +4,15 @@ from datetime import date
 
 from .const import (SNOO_ME_ENDPOINT,
                     SNOO_DEVICES_ENDPOINT,
-                    SNOO_BABY_ENDPOINT)
+                    SNOO_BABY_ENDPOINT,
+                    SNOO_SESSIONS_LAST_ENDPOINT)
 from .auth_session import SnooAuthSession
-from .models import (User,
-                     Device,
-                     Baby,
-                     Sex,
+from .models import (User, Device, Baby, Sex,
                      MinimalLevel,
                      MinimalLevelVolume,
                      ResponsivenessLevel,
-                     SoothingLevelVolume)
+                     SoothingLevelVolume,
+                     LastSession)
 
 
 class Snoo:
@@ -40,6 +39,12 @@ class Snoo:
         async with self.auth.get(SNOO_BABY_ENDPOINT) as resp:
             assert resp.status == 200
             return Baby.from_dict(await resp.json())
+
+    async def get_last_session(self) -> LastSession:
+        """Return Information about the last session"""
+        async with self.auth.get(SNOO_SESSIONS_LAST_ENDPOINT) as resp:
+            assert resp.status == 200
+            return LastSession.from_dict(await resp.json())
 
     async def set_baby_info(self,
                             baby_name: str,

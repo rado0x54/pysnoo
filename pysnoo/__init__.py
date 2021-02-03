@@ -17,7 +17,9 @@ from .models import (User,
                      MinimalLevelVolume,
                      SoothingLevelVolume,
                      MinimalLevel,
-                     Sex)
+                     Sex,
+                     LastSession,
+                     SessionLevel)
 
 __all__ = ['SnooAuthSession',
            'Snoo',
@@ -31,4 +33,6 @@ __all__ = ['SnooAuthSession',
            'MinimalLevelVolume',
            'SoothingLevelVolume',
            'MinimalLevel',
-           'Sex']
+           'Sex',
+           'LastSession',
+           'SessionLevel']

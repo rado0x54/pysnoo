@@ -447,6 +447,13 @@ class AggregatedSession:
         """Return dict from Object"""
         return {
             "daySleep": str(self.day_sleep),
+            "levels": [item.to_dict() for item in self.levels],
+            "longestSleep": str(self.longest_sleep),
+            "naps": self.naps,
+            "nightSleep": str(self.night_sleep),
+            "nightWakings": self.night_wakings,
+            "timezone": self.timezone,
+            "totalSleep": str(self.total_sleep),
         }
 
 
@@ -479,6 +486,16 @@ class AggregatedDays:
             night_wakings=data.get("nightWakings", [])
         )
 
+    def to_dict(self):
+        """Return dict from Object"""
+        return {
+            "totalSleep": [str(item) for item in self.total_sleep],
+            "daySleep": [str(item) for item in self.day_sleep],
+            "nightSleep": [str(item) for item in self.night_sleep],
+            "longestSleep": [str(item) for item in self.longest_sleep],
+            "nightWakings": self.night_wakings,
+        }
+
 
 @dataclass(frozen=True)
 class AggregatedSessionAvg:
@@ -502,3 +519,18 @@ class AggregatedSessionAvg:
             night_wakings_avg=data.get("nightWakingsAVG", 0.0),
             days=AggregatedDays.from_dict(data.get("days")),
         )
+
+    def to_dict(self):
+        """Return dict from Object"""
+        days = self.days
+        if days is not None:
+            days = days.to_dict()
+
+        return {
+            "totalSleepAVG": str(self.total_sleep_avg),
+            "daySleepAVG": str(self.day_sleep_avg),
+            "nightSleepAVG": str(self.night_sleep_avg),
+            "longestSleepAVG": str(self.longest_sleep_avg),
+            "nightWakingsAVG": self.night_wakings_avg,
+            "days": days
+        }

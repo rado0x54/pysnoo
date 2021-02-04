@@ -8,48 +8,62 @@ import json
 from pprint import pprint
 
 from typing import Callable
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from pysnoo import SnooAuthSession, Snoo
+from pysnoo.models import dt_str_to_dt
 
 # logging.basicConfig(level=logging.DEBUG)
 
-async def user(snoo: Snoo):
+async def user(snoo: Snoo, args={}):
     user = await snoo.get_me()
     pprint(user.to_dict())
 
-async def device(snoo: Snoo):
+async def device(snoo: Snoo, args={}):
     devices = await snoo.get_devices()
     if (len(devices) > 0):
         pprint(devices[0].to_dict())
 
-async def baby(snoo: Snoo):
+async def baby(snoo: Snoo, args={}):
     baby = await snoo.get_baby()
     pprint(baby.to_dict())
 
-async def last_session(snoo: Snoo):
+async def last_session(snoo: Snoo, args={}):
     last_session = await snoo.get_last_session()
     pprint(last_session.to_dict())
 
-async def status(snoo: Snoo):
+async def status(snoo: Snoo, args={}):
     last_session = await snoo.get_last_session()
     print(f'{last_session.current_status.value} (since: {last_session.current_status_duration})')
 
-async def session(snoo: Snoo):
-    session = await snoo.get_aggregated_session(datetime(2021,2,2,7,0,0))
+async def session(snoo: Snoo, args={}):
+    session = await snoo.get_aggregated_session(args.datetime)
     pprint(session.to_dict())
 
+async def session_avg(snoo: Snoo, args={}):
+    baby = await snoo.get_baby()
+    session_avg = await snoo.get_aggregated_session_avg(baby.baby, args.datetime)
+    pprint(session_avg.to_dict())
+
+async def total(snoo: Snoo, args={}):
+    baby = await snoo.get_baby()
+    total = await snoo.get_session_total_time(baby.baby)
+    print(total)
+
 # Function Dictionary
-functions = {
+commands = {
     'user': user,
     'device': device,
     'baby': baby,
     'last_session': last_session,
     'status': status,
-    'session': session
+    'session': session,
+    'session_avg': session_avg,
+    'total': total
 }
 
-async def async_main(username, password, token, token_updater, func: Callable[[Snoo], None]):
+
+async def async_main(username, password, token, token_updater, args: any):
     """Async Main"""
 
     async with SnooAuthSession(token, token_updater) as auth:
@@ -60,14 +74,8 @@ async def async_main(username, password, token, token_updater, func: Callable[[S
             token_updater(new_token)
 
         snoo = Snoo(auth)
-        await func(snoo)
+        await commands[args.command](snoo, args)
 
-        # baby = await snoo.set_baby_info('John 3', date(2021, 1, 18), 6, None)
-        # print(f'{baby}')
-        # # aggregated_session = await snoo.get_aggregated_session(datetime(2021, 2, 2, 7, 0, 0))
-        # # print(f'{aggregated_session}')
-        # aggregated_session = await snoo.get_aggregated_session(datetime(2021, 2, 2, 13, 30, 0))
-        # print(f'{aggregated_session}')
         # aggregated_session_avg = await snoo.get_aggregated_session_avg(baby.baby, datetime(2021, 1, 21, 0, 0, 0))
         # print(f'{aggregated_session_avg}')
         # aggregated_session_avg = await snoo.get_aggregated_session_avg(baby.baby,
@@ -109,16 +117,6 @@ def get_token(token_file):
         pass
 
 
-def _header():
-    _bar()
-    print("Snoo CLI")
-    _bar()
-
-
-def _bar():
-    print('---------------------------------')
-
-
 def get_username():
     """read username from STDIN"""
     username = input("Username: ")
@@ -133,31 +131,35 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument(
-        'command', default='user', choices=['user', 'device', 'baby', 'last_session', 'status', 'session']
+        'command', default='user', choices=['user', 'device', 'baby',
+                                            'last_session', 'status', 'session',
+                                            'session_avg', 'total']
     )
 
     parser.add_argument('-u',
                         '--username',
-                        dest='username',
                         type=str,
                         help='username for Snoo account')
 
     parser.add_argument('-p',
                         '--password',
                         type=str,
-                        dest='password',
                         help='username for Snoo account')
 
     parser.add_argument('-t',
-                        '--tokenFile',
+                        '--token_file',
                         metavar='file',
                         default='.snoo_token.txt',
-                        dest='token_file',
                         help='Cached token file to read and write an existing OAuth Token to.')
 
-    args = parser.parse_args()
-    _header()
+    parser.add_argument('-d',
+                        '--datetime',
+                        default=datetime.now() - timedelta(1),  # 24h prior
+                        type=dt_str_to_dt,
+                        help='Datetime in ISO8601 fromat. Used for some commands.',
+    )
 
+    args = parser.parse_args()
     token = get_token(args.token_file)
 
     if not token and not args.username:
@@ -168,8 +170,10 @@ def main():
 
     token_updater = get_token_updater(args.token_file)
 
+
+
     # Python 3.7+
-    asyncio.run(async_main(args.username, args.password, token, token_updater, functions[args.command]))
+    asyncio.run(async_main(args.username, args.password, token, token_updater, args))
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 
 import json
 from unittest import TestCase
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from pysnoo import (User, Device, Baby, LastSession,
                     ResponsivenessLevel,
@@ -92,8 +92,9 @@ class TestSnooModels(TestCase):
                          datetime.strptime(last_session_payload['startTime'], "%Y-%m-%dT%H:%M:%S.%f%z"))
         self.assertEqual(last_session.end_time,
                          datetime.strptime(last_session_payload['endTime'], "%Y-%m-%dT%H:%M:%S.%f%z"))
-        # TODO:
-        # self.assertEqual(last_session.duration, timedelta(seconds=36, milliseconds=729))
+        self.assertEqual(last_session.current_status, SessionItemType.AWAKE)
+        # Maybe update to mock datetime.now() for cleaner test.
+        self.assertLessEqual(last_session.current_status_duration, datetime.now(timezone.utc) - last_session.end_time)
         self.assertEqual(last_session.levels, [
             SessionLevel.BASELINE,
             SessionLevel.LEVEL1,

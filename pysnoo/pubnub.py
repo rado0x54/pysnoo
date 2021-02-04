@@ -4,7 +4,7 @@ from pubnub.callbacks import SubscribeCallback
 from pubnub.enums import PNStatusCategory
 
 from pubnub.pnconfiguration import PNConfiguration
-from pubnub.pubnub import PubNub
+from pubnub.pubnub_asyncio import PubNubAsyncio
 
 
 class MySubscribeCallback(SubscribeCallback):
@@ -48,10 +48,10 @@ class SnooPubNub:
 
     def __init__(self, access_token, snoo_serial):
         """Initialize the Snoo PubNub object."""
-        self._access_token = access_token
+        # self._access_token = access_token
         self._snoo_serial = snoo_serial
         self._pnconfig = self._setup_pnconfig(access_token)
-        self._pubnub = PubNub(self._pnconfig)
+        self._pubnub = PubNubAsyncio(self._pnconfig)
 
     @staticmethod
     def _setup_pnconfig(access_token):
@@ -71,3 +71,14 @@ class SnooPubNub:
             'ActivityState.{}'.format(self._snoo_serial),
             'ControlCommand.{}-pnpres'.format(self._snoo_serial)
         ]).execute()
+
+    async def history(self, count=1):
+        """Retrieve number of count historic messages"""
+        envelope = await self._pubnub.history().channel(
+            'ActivityState.{}'.format(self._snoo_serial)
+        ).count(count).future()
+        return [item.entry for item in envelope.result.messages]
+
+    def unsubscribe(self):
+        """Unsubscribe"""
+        self._pubnub.unsubscribe_all()

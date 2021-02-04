@@ -10,10 +10,10 @@ from pprint import pprint
 from typing import Callable
 from datetime import datetime, timedelta
 
-from pysnoo import SnooAuthSession, Snoo
+from pysnoo import SnooAuthSession, Snoo, SnooPubNub
 from pysnoo.models import dt_str_to_dt
 
-# logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 
 async def user(snoo: Snoo, args={}):
     user = await snoo.get_me()
@@ -50,6 +50,27 @@ async def total(snoo: Snoo, args={}):
     total = await snoo.get_session_total_time(baby.baby)
     print(total)
 
+async def monitor(snoo: Snoo, args={}):
+    # Also checks for valid token
+    devices = await snoo.get_devices()
+    if not devices:
+        # No devices
+        print('There is no Snoo connected to that account!')
+        return
+
+    access_token = snoo.auth.access_token
+    print(access_token)
+    pubnub = SnooPubNub(access_token, devices[0].serial_number)
+    pubnub.subscribe()
+
+    env = await pubnub.history()
+    print(env)
+    while True:
+        await asyncio.sleep(1)
+        print('Sleeping Some!')
+
+    # await asyncio.sleep(8000)
+
 # Function Dictionary
 commands = {
     'user': user,
@@ -59,7 +80,8 @@ commands = {
     'status': status,
     'session': session,
     'session_avg': session_avg,
-    'total': total
+    'total': total,
+    'monitor': monitor
 }
 
 
@@ -75,6 +97,7 @@ async def async_main(username, password, token, token_updater, args: any):
 
         snoo = Snoo(auth)
         await commands[args.command](snoo, args)
+        print('GETTING HERE!!!!!!!!!!!!!!!!')
 
         # aggregated_session_avg = await snoo.get_aggregated_session_avg(baby.baby, datetime(2021, 1, 21, 0, 0, 0))
         # print(f'{aggregated_session_avg}')
@@ -133,7 +156,7 @@ def main():
     parser.add_argument(
         'command', default='user', choices=['user', 'device', 'baby',
                                             'last_session', 'status', 'session',
-                                            'session_avg', 'total']
+                                            'session_avg', 'total', 'monitor']
     )
 
     parser.add_argument('-u',
@@ -161,6 +184,7 @@ def main():
 
     args = parser.parse_args()
     token = get_token(args.token_file)
+    token_updater = get_token_updater(args.token_file)
 
     if not token and not args.username:
         args.username = get_username()
@@ -168,12 +192,14 @@ def main():
     if not token and not args.password:
         args.password = getpass.getpass("Password: ")
 
-    token_updater = get_token_updater(args.token_file)
+
 
 
 
     # Python 3.7+
-    asyncio.run(async_main(args.username, args.password, token, token_updater, args))
+    # asyncio.run(async_main(args.username, args.password, token, token_updater, args))
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(async_main(args.username, args.password, token, token_updater, args))
 
 
 if __name__ == "__main__":

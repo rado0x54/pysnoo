@@ -7,6 +7,7 @@ entities and expose their functionality.
 
 from .auth_session import SnooAuthSession
 from .snoo import Snoo
+from .pubnub import SnooPubNub
 from .models import (User,
                      Device,
                      Baby,
@@ -27,6 +28,7 @@ from .models import (User,
 
 __all__ = ['SnooAuthSession',
            'Snoo',
+           'SnooPubNub',
            'User',
            'Device',
            'Baby',

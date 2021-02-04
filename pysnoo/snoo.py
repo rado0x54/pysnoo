@@ -34,7 +34,7 @@ class Snoo:
             assert resp.status == 200
             return User.from_dict(await resp.json())
 
-    async def get_devices(self) -> List[User]:
+    async def get_devices(self) -> List[Device]:
         """Return Information about the configured devices"""
         async with self.auth.get(SNOO_DEVICES_ENDPOINT) as resp:
             assert resp.status == 200

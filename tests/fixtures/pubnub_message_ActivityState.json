@@ -1,25 +1,25 @@
 {
-  'left_safety_clip': 1,
-  'rx_signal': {
-    'rssi': -47,
-    'strength': 96
+  "left_safety_clip": 1,
+  "rx_signal": {
+    "rssi": -47,
+    "strength": 96
   },
-  'right_safety_clip': 1,
-  'sw_version': 'v1.14.12',
-  'event_time_ms': 1612401999788,
-  'state_machine': {
-    'up_transition': 'LEVEL1',
-    'since_session_start_ms': 0,
-    'sticky_white_noise': 'off',
-    'weaning': 'off',
-    'time_left': -1,
-    'session_id': '1739895777',
-    'state': 'BASELINE',
-    'is_active_session': 'true',
-    'down_transition': 'NONE',
-    'hold': 'off',
-    'audio': 'on'
+  "right_safety_clip": 0,
+  "sw_version": "v1.14.12",
+  "event_time_ms": 1612401999588,
+  "state_machine": {
+    "up_transition": "LEVEL1",
+    "since_session_start_ms": 123456,
+    "sticky_white_noise": "off",
+    "weaning": "off",
+    "time_left": -1,
+    "session_id": "1234567890",
+    "state": "BASELINE",
+    "is_active_session": "true",
+    "down_transition": "NONE",
+    "hold": "off",
+    "audio": "on"
   },
-  'system_state': 'normal',
-  'event': 'activity'
+  "system_state": "normal",
+  "event": "activity"
 }

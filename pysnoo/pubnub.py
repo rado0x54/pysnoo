@@ -1,84 +1,138 @@
-# coding: utf-8
 """PySnoo PubNub Interface."""
+import asyncio
+import logging
+from typing import Callable, Optional
+
 from pubnub.callbacks import SubscribeCallback
-from pubnub.enums import PNStatusCategory
-
 from pubnub.pnconfiguration import PNConfiguration
-from pubnub.pubnub_asyncio import PubNubAsyncio
+from pubnub.pubnub_asyncio import PubNubAsyncio, utils
+
+from .models import ActivityState, SessionLevel
+from .const import SNOO_PUBNUB_PUBLISH_KEY, SNOO_PUBNUB_SUBSCRIBE_KEY
 
 
-class MySubscribeCallback(SubscribeCallback):
-    """Sample Subscription Class"""
+class SnooSubscribeListener(SubscribeCallback):
+    """Snoo Subscription Listener Class"""
 
-    def presence(self, pubnub, presence):
-        print('presence')
-        print(presence)
-        # handle incoming presence data
+    def __init__(self, callback: Callable[[ActivityState], None]):
+        """Initialize the Snoo Subscription Listener"""
+        self.connected_event = asyncio.Event()
+        self.disconnected_event = asyncio.Event()
+        self._callback = callback
 
     def status(self, pubnub, status):
-        print('status')
-        print(status)
-        if status.category == PNStatusCategory.PNUnexpectedDisconnectCategory:
-            print('PNStatusCategory.PNUnexpectedDisconnectCategory')
-            # This event happens when radio / connectivity is lost
-
-        elif status.category == PNStatusCategory.PNConnectedCategory:
-            # Connect event. You can do stuff like publish, and know you'll get it.
-            # Or just use the connected event to confirm you are subscribed for
-            # UI / internal notifications, etc
-            print('PNStatusCategory.PNConnectedCategory')
-            # pubnub.publish().channel('my_channel').message('Hello world!').pn_async(my_publish_callback)
-        elif status.category == PNStatusCategory.PNReconnectedCategory:
-            print('PNStatusCategory.PNReconnectedCategory')
-            # Happens as part of our regular operation. This event happens when
-            # radio / connectivity is lost, then regained.
-        elif status.category == PNStatusCategory.PNDecryptionErrorCategory:
-            print('PNStatusCategory.PNDecryptionErrorCategory')
-            # Handle message decryption error. Probably client configured to
-            # encrypt messages and on live data feed it received plain text.
+        """PubNub Status Callback Implementation"""
+        if utils.is_subscribed_event(status) and not self.connected_event.is_set():
+            self.connected_event.set()
+        elif utils.is_unsubscribed_event(status) and not self.disconnected_event.is_set():
+            self.disconnected_event.set()
+        elif status.is_error():
+            logging.error('Error in Snoo PubNub Listener of Category: %s', status.category)
 
     def message(self, pubnub, message):
-        # Handle new message stored in message.message
-        print(message.message)
+        """PubNub Message Callback Implementation"""
+        self._callback(ActivityState.from_dict(message.message))
+
+    def presence(self, pubnub, presence):
+        """PubNub Presence Callback Implementation"""
+        print('presence')
+        print(presence)
+
+    async def wait_for_connect(self):
+        """Async utility function that waits for subscription connect."""
+        if not self.connected_event.is_set():
+            await self.connected_event.wait()
+        else:
+            raise Exception("instance is already connected")
+
+    async def wait_for_disconnect(self):
+        """Async utility function that waits for subscription disconnect."""
+        if not self.disconnected_event.is_set():
+            await self.disconnected_event.wait()
+        else:
+            raise Exception("instance is already disconnected")
 
 
 class SnooPubNub:
     """A Python Abstraction for Snoos PubNub Interface."""
     # pylint: disable=too-few-public-methods,fixme
 
-    def __init__(self, access_token, snoo_serial):
+    def __init__(self,
+                 access_token: str,
+                 snoo_serial: str,
+                 uuid: str,
+                 callback: Callable[[ActivityState], None]):
         """Initialize the Snoo PubNub object."""
         # self._access_token = access_token
-        self._snoo_serial = snoo_serial
-        self._pnconfig = self._setup_pnconfig(access_token)
+        # self._snoo_serial = snoo_serial
+        self._activiy_channel = 'ActivityState.{}'.format(snoo_serial)
+        self._controlcommand_channel = 'ControlCommand.{}'.format(snoo_serial)
+        self._pnconfig = self._setup_pnconfig(access_token, uuid)
         self._pubnub = PubNubAsyncio(self._pnconfig)
+        self._listener = SnooSubscribeListener(callback)
 
     @staticmethod
-    def _setup_pnconfig(access_token):
+    def _setup_pnconfig(access_token, uuid):
         """Generate Setup"""
         pnconfig = PNConfiguration()
-        pnconfig.subscribe_key = "sub-c-97bade2a-483d-11e6-8b3b-02ee2ddab7fe"
-        pnconfig.publish_key = "pub-c-699074b0-7664-4be2-abf8-dcbb9b6cd2b"
-        pnconfig.uuid = "UUID"  # TODO: Change
+        pnconfig.subscribe_key = SNOO_PUBNUB_SUBSCRIBE_KEY
+        pnconfig.publish_key = SNOO_PUBNUB_PUBLISH_KEY
+        pnconfig.uuid = uuid
         pnconfig.auth_key = access_token
         pnconfig.ssl = True
         return pnconfig
 
-    def subscribe(self):
-        """Subscribe"""
-        self._pubnub.add_listener(MySubscribeCallback())
+    async def subscribe(self):
+        """Subscribe to Snoo Activity Channel"""
+        self._pubnub.add_listener(self._listener)
         self._pubnub.subscribe().channels([
-            'ActivityState.{}'.format(self._snoo_serial),
-            'ControlCommand.{}-pnpres'.format(self._snoo_serial)
+            self._activiy_channel
         ]).execute()
+
+        await self._listener.wait_for_connect()
+
+    async def unsubscribe(self):
+        """Unsubscribe to Snoo Activity Channel"""
+        self._pubnub.unsubscribe().channels(
+            self._activiy_channel
+        ).execute()
+        await self._listener.wait_for_disconnect()
 
     async def history(self, count=1):
         """Retrieve number of count historic messages"""
         envelope = await self._pubnub.history().channel(
-            'ActivityState.{}'.format(self._snoo_serial)
+            self._activiy_channel
         ).count(count).future()
-        return [item.entry for item in envelope.result.messages]
+        return [ActivityState.from_dict(item.entry) for item in envelope.result.messages]
 
-    def unsubscribe(self):
-        """Unsubscribe"""
-        self._pubnub.unsubscribe_all()
+    async def publish(self, message):
+        """Publish a message to the Snoo control command channel"""
+        task = await self._pubnub.publish().channel(
+            self._controlcommand_channel).message(message).future()
+        return task
+
+    async def publish_goto_state(self, level: SessionLevel, hold: Optional[bool] = None):
+        """Publish a message a go_to_state command to the Snoo control command channel"""
+        msg = {
+            'command': 'go_to_state',
+            'state': level.value
+        }
+        if hold is not None:
+            msg['hold'] = 'on' if hold else 'off'
+        return await self.publish(msg)
+
+    async def publish_start(self):
+        """Publish a message a start_snoo command to the Snoo control command channel"""
+        return await self.publish({
+            'command': 'start_snoo'
+        })
+
+    async def stop(self):
+        """Stop and Cleanup the Async Pubnub Utility"""
+        # pylint: disable=protected-access
+        # Workaround until PR is accepted:
+        # https://github.com/pubnub/python/pull/99
+        # self._pubnub.stop()
+        await self._pubnub._session.close()
+        if self._pubnub._subscription_manager is not None:
+            self._pubnub._subscription_manager.stop()

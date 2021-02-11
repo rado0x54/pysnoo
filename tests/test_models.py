@@ -12,7 +12,8 @@ from pysnoo import (User, Device, Baby, LastSession,
                     SessionLevel,
                     AggregatedSession,
                     SessionItemType,
-                    AggregatedSessionAvg)
+                    AggregatedSessionAvg,
+                    ActivityState)
 
 
 from .helpers import load_fixture
@@ -157,3 +158,51 @@ class TestSnooModels(TestCase):
                          [timedelta(seconds=item) for item in aggregated_session_avg_payload['days']['longestSleep']])
         self.assertEqual(aggregated_session_avg.days.night_wakings,
                          aggregated_session_avg_payload['days']['nightWakings'])
+
+    def test_activity_signal_mapping(self):
+        """Test successful mapping from json payload"""
+        activity_state_msg_payload = json.loads(
+            load_fixture('', 'pubnub_message_ActivityState.json'))
+        activity_state = ActivityState.from_dict(activity_state_msg_payload)
+
+        self.assertEqual(activity_state.left_safety_clip, activity_state_msg_payload['left_safety_clip'])
+        self.assertIsNotNone(activity_state.rx_signal)
+        self.assertEqual(activity_state.rx_signal.rssi, activity_state_msg_payload['rx_signal']['rssi'])
+        self.assertEqual(activity_state.rx_signal.strength, activity_state_msg_payload['rx_signal']['strength'])
+        self.assertEqual(activity_state.right_safety_clip, activity_state_msg_payload['right_safety_clip'])
+        self.assertEqual(activity_state.sw_version, activity_state_msg_payload['sw_version'])
+        self.assertEqual(activity_state.event_time.timestamp() * 1000, activity_state_msg_payload['event_time_ms'])
+        self.assertIsNotNone(activity_state.state_machine)
+        self.assertEqual(activity_state.state_machine.up_transition.value,
+                         activity_state_msg_payload['state_machine']['up_transition'])
+        self.assertEqual(activity_state.state_machine.since_session_start.total_seconds() * 1000,
+                         activity_state_msg_payload['state_machine']['since_session_start_ms'])
+        self.assertEqual(activity_state.state_machine.sticky_white_noise,
+                         activity_state_msg_payload['state_machine']['sticky_white_noise'] == 'on')
+        self.assertEqual(activity_state.state_machine.weaning,
+                         activity_state_msg_payload['state_machine']['weaning'] == 'on')
+        self.assertEqual(activity_state.state_machine.time_left, None)
+        self.assertEqual(activity_state.state_machine.session_id,
+                         activity_state_msg_payload['state_machine']['session_id'])
+        self.assertEqual(activity_state.state_machine.state.value, activity_state_msg_payload['state_machine']['state'])
+        self.assertEqual(activity_state.state_machine.is_active_session,
+                         activity_state_msg_payload['state_machine']['is_active_session'] == 'true')
+        self.assertEqual(activity_state.state_machine.down_transition.value,
+                         activity_state_msg_payload['state_machine']['down_transition'])
+        self.assertEqual(activity_state.state_machine.hold, activity_state_msg_payload['state_machine']['hold'] == 'on')
+        self.assertEqual(activity_state.state_machine.audio,
+                         activity_state_msg_payload['state_machine']['audio'] == 'on')
+        self.assertEqual(activity_state.system_state, activity_state_msg_payload['system_state'])
+        self.assertEqual(activity_state.event.value, activity_state_msg_payload['event'])
+
+    def test_session_level(self):
+        """Test SessionLevel Enum"""
+        self.assertTrue(SessionLevel.BASELINE.is_active_level())
+        self.assertTrue(SessionLevel.WEANING_BASELINE.is_active_level())
+        self.assertTrue(SessionLevel.LEVEL1.is_active_level())
+        self.assertTrue(SessionLevel.LEVEL2.is_active_level())
+        self.assertTrue(SessionLevel.LEVEL3.is_active_level())
+        self.assertTrue(SessionLevel.LEVEL4.is_active_level())
+        self.assertFalse(SessionLevel.ONLINE.is_active_level())
+        self.assertFalse(SessionLevel.NONE.is_active_level())
+        self.assertFalse(SessionLevel.PRETIMEOUT.is_active_level())

@@ -255,7 +255,7 @@ class Settings:
 
 @dataclass(frozen=True)
 class Baby:
-    """Return baby object from dict."""
+    """Object for Snoo Baby information."""
 
     baby: str  # ID of baby
     baby_name: str
@@ -322,6 +322,17 @@ class SessionLevel(Enum):
     LEVEL2 = 'LEVEL2'
     LEVEL3 = 'LEVEL3'
     LEVEL4 = 'LEVEL4'
+    NONE = 'NONE'
+    PRETIMEOUT = 'PRETIMEOUT'
+
+    def is_active_level(self):
+        """Returns true if the Enum value represents an active level."""
+        return self in [SessionLevel.BASELINE,
+                        SessionLevel.WEANING_BASELINE,
+                        SessionLevel.LEVEL1,
+                        SessionLevel.LEVEL2,
+                        SessionLevel.LEVEL3,
+                        SessionLevel.LEVEL4]
 
 
 class SessionItemType(Enum):
@@ -333,7 +344,7 @@ class SessionItemType(Enum):
 
 @dataclass(frozen=True)
 class LastSession:
-    """Return LastSession object from dict."""
+    """Object for Snoo LastSession information."""
 
     end_time: datetime
     levels: List[SessionLevel]
@@ -381,7 +392,7 @@ class LastSession:
 
 @dataclass(frozen=True)
 class AggregatedSessionItem:
-    """Return AggregatedSessionItem object from dict."""
+    """Object for Snoo AggregatedSessionItem information."""
 
     is_active: bool
     session_id: str
@@ -418,7 +429,7 @@ class AggregatedSessionItem:
 
 @dataclass(frozen=True)
 class AggregatedSession:
-    """Return AggregatedSession object from dict."""
+    """Object for Snoo AggregatedSession information."""
 
     day_sleep: timedelta
     levels: List[AggregatedSessionItem]
@@ -465,7 +476,7 @@ class AggregatedSessionInterval(Enum):
 
 @dataclass(frozen=True)
 class AggregatedDays:
-    """Return AggregatedDays object from dict."""
+    """Object for Snoo AggregatedDays information."""
     total_sleep: List[timedelta]
     day_sleep: List[timedelta]
     night_sleep: List[timedelta]
@@ -499,7 +510,7 @@ class AggregatedDays:
 
 @dataclass(frozen=True)
 class AggregatedSessionAvg:
-    """Return AggregatedSessionAvg object from dict."""
+    """Object for Snoo AggregatedSessionAvg information."""
 
     total_sleep_avg: timedelta
     day_sleep_avg: timedelta
@@ -534,3 +545,96 @@ class AggregatedSessionAvg:
             "nightWakingsAVG": self.night_wakings_avg,
             "days": days
         }
+
+
+@dataclass(frozen=True)
+class Signal:
+    """Object for Snoo Signal information."""
+    rssi: int
+    strength: int
+
+    @staticmethod
+    def from_dict(data: dict):
+        """Return AggregatedSessionAvg object from dict."""
+        return Signal(**data)
+
+    def to_dict(self):
+        """Return dict from Object"""
+        return vars(self)
+
+
+@dataclass(frozen=True)
+class StateMachine:
+    """Object for Snoo StateMachine information."""
+
+    up_transition: SessionLevel
+    since_session_start: timedelta
+    sticky_white_noise: bool
+    weaning: bool
+    time_left: timedelta
+    session_id: str
+    state: SessionLevel
+    is_active_session: bool
+    down_transition: SessionLevel
+    hold: bool
+    audio: bool
+
+    @staticmethod
+    def from_dict(data: dict):
+        """Return StateMachine object from dict."""
+        time_left = data.get("time_left")
+        if time_left and time_left > 0:
+            time_left = timedelta(seconds=time_left)
+        else:
+            time_left = None
+
+        return StateMachine(
+            up_transition=SessionLevel(data.get("up_transition", SessionLevel.NONE.value)),
+            since_session_start=timedelta(milliseconds=data.get("since_session_start_ms", 0)),
+            sticky_white_noise=data.get("sticky_white_noise") == 'on',
+            weaning=data.get("weaning") == 'on',
+            time_left=time_left,
+            session_id=data.get("session_id"),
+            state=SessionLevel(data.get("state", SessionLevel.NONE.value)),
+            is_active_session=data.get("is_active_session") == 'true',
+            down_transition=SessionLevel(data.get("down_transition", SessionLevel.NONE.value)),
+            hold=data.get("hold") == 'on',
+            audio=data.get("audio") == 'on'
+        )
+
+
+class EventType(Enum):
+    """Enum for EventType"""
+    ACTIVITY = 'activity'
+    CRY = 'cry'
+    TIMER = 'timer'
+    COMMAND = 'command'
+    SAFETY_CLIP = 'safety_clip'
+
+
+@dataclass(frozen=True)
+class ActivityState:
+    """Return AggregatedSessionAvg object from dict."""
+
+    left_safety_clip: bool
+    rx_signal: Signal
+    right_safety_clip: bool
+    sw_version: str
+    event_time: datetime
+    state_machine: StateMachine
+    system_state: str
+    event: EventType
+
+    @staticmethod
+    def from_dict(data: dict):
+        """Return AggregatedSessionAvg object from dict."""
+        return ActivityState(
+            left_safety_clip=bool(data.get("left_safety_clip")),
+            rx_signal=Signal.from_dict(data.get("rx_signal", {})),
+            right_safety_clip=bool(data.get("right_safety_clip")),
+            sw_version=data.get("sw_version"),
+            event_time=datetime.utcfromtimestamp(data.get("event_time_ms") / 1000).replace(tzinfo=timezone.utc),
+            state_machine=StateMachine.from_dict(data.get("state_machine", {})),
+            system_state=data.get("system_state"),
+            event=EventType(data.get("event", EventType.ACTIVITY.value)),
+        )

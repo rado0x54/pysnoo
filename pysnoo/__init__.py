@@ -24,7 +24,8 @@ from .models import (User,
                      AggregatedSession,
                      AggregatedSessionItem,
                      SessionItemType,
-                     AggregatedSessionAvg)
+                     AggregatedSessionAvg,
+                     ActivityState)
 
 __all__ = ['SnooAuthSession',
            'Snoo',
@@ -45,4 +46,5 @@ __all__ = ['SnooAuthSession',
            'AggregatedSession',
            'AggregatedSessionItem',
            'SessionItemType',
-           'AggregatedSessionAvg']
+           'AggregatedSessionAvg',
+           'ActivityState']

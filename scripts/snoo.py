@@ -60,13 +60,13 @@ async def total(snoo: Snoo, args):
     print(total)
 
 async def monitor(snoo: Snoo, args):
-    def cb(msg):
-        print(msg)
+    def cb(activity_state):
+        pprint(activity_state.to_dict())
 
     pubnub = await _setup_pubnub(snoo, cb)
 
-    for msg in await pubnub.history():
-        cb(msg)
+    for activity_state in await pubnub.history():
+        cb(activity_state)
 
     await pubnub.subscribe()
 
@@ -83,16 +83,16 @@ async def monitor(snoo: Snoo, args):
 async def history(snoo: Snoo, args):
     pubnub = await _setup_pubnub(snoo, None)
 
-    for msg in await pubnub.history(100):
-        print(msg)
+    for activity_state in await pubnub.history(100):
+        pprint(activity_state.to_dict())
 
     await pubnub.stop()
 
 async def toggle(snoo: Snoo, args):
     pubnub = await _setup_pubnub(snoo, None)
 
-    lastActivityState = (await pubnub.history())[0]
-    if lastActivityState.state_machine.state == SessionLevel.ONLINE:
+    last_activity_state = (await pubnub.history())[0]
+    if last_activity_state.state_machine.state == SessionLevel.ONLINE:
         # Start
         await pubnub.publish_start()
     else:
@@ -105,9 +105,9 @@ async def toggle(snoo: Snoo, args):
 async def toggleHold(snoo: Snoo, args):
     pubnub = await _setup_pubnub(snoo, None)
 
-    lastActivityState = (await pubnub.history())[0]
-    current_state = lastActivityState.state_machine.state
-    current_hold = lastActivityState.state_machine.hold
+    last_activity_state = (await pubnub.history())[0]
+    current_state = last_activity_state.state_machine.state
+    current_hold = last_activity_state.state_machine.hold
     if current_state.is_active_level():
         # Toggle
         await pubnub.publish_goto_state(current_state, not current_hold)
@@ -120,8 +120,8 @@ async def toggleHold(snoo: Snoo, args):
 async def up(snoo: Snoo, args):
     pubnub = await _setup_pubnub(snoo, None)
 
-    lastActivityState = (await pubnub.history())[0]
-    up_transition = lastActivityState.state_machine.up_transition
+    last_activity_state = (await pubnub.history())[0]
+    up_transition = last_activity_state.state_machine.up_transition
     if up_transition.is_active_level():
         # Toggle
         await pubnub.publish_goto_state(up_transition)

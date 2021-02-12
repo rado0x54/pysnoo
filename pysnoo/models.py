@@ -583,14 +583,20 @@ class StateMachine:
     def from_dict(data: dict):
         """Return StateMachine object from dict."""
         time_left = data.get("time_left")
-        if time_left and time_left > 0:
+        if time_left and time_left >= 0:
             time_left = timedelta(seconds=time_left)
         else:
             time_left = None
 
+        since_session_start = data.get("since_session_start_ms")
+        if since_session_start and since_session_start >= 0:
+            since_session_start = timedelta(milliseconds=since_session_start)
+        else:
+            since_session_start = None
+
         return StateMachine(
             up_transition=SessionLevel(data.get("up_transition", SessionLevel.NONE.value)),
-            since_session_start=timedelta(milliseconds=data.get("since_session_start_ms", 0)),
+            since_session_start=since_session_start,
             sticky_white_noise=data.get("sticky_white_noise") == 'on',
             weaning=data.get("weaning") == 'on',
             time_left=time_left,
@@ -601,6 +607,22 @@ class StateMachine:
             hold=data.get("hold") == 'on',
             audio=data.get("audio") == 'on'
         )
+
+    def to_dict(self):
+        """Return dict from Object"""
+        return {
+            'up_transition': self.up_transition.value,
+            'since_session_start': None if self.since_session_start is None else str(self.since_session_start),
+            'sticky_white_noise': self.sticky_white_noise,
+            'weaning': self.weaning,
+            'time_left': None if self.time_left is None else str(self.time_left),
+            'session_id': self.session_id,
+            'state': self.state.value,
+            'is_active_session': self.is_active_session,
+            'down_transition': self.down_transition.value,
+            'hold': self.hold,
+            'audio': self.audio
+        }
 
 
 class EventType(Enum):
@@ -638,3 +660,16 @@ class ActivityState:
             system_state=data.get("system_state"),
             event=EventType(data.get("event", EventType.ACTIVITY.value)),
         )
+
+    def to_dict(self):
+        """Return dict from Object"""
+        return {
+            "left_safety_clip": self.left_safety_clip,
+            "rx_signal": self.rx_signal.to_dict(),
+            "right_safety_clip": self.right_safety_clip,
+            "sw_version": self.sw_version,
+            "event_time": dt_to_dt_str(self.event_time),
+            "state_machine": self.state_machine.to_dict(),
+            "system_state": self.system_state,
+            "event": self.event.value,
+        }

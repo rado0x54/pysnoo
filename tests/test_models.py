@@ -33,6 +33,9 @@ class TestSnooModels(TestCase):
         self.assertEqual(user.surname, user_payload['surname'])
         self.assertEqual(user.user_id, user_payload['userId'])
 
+        # Check to_dict()
+        self.assertEqual(user.to_dict(), user_payload)
+
     def test_device_mapping(self):
         """Test successful mapping from json payload"""
         device_payload = json.loads(load_fixture('', 'ds_me_devices__get_200.json'))[0]
@@ -50,6 +53,9 @@ class TestSnooModels(TestCase):
                          datetime.strptime(device_payload['lastSSID']['updatedAt'], "%Y-%m-%dT%H:%M:%S.%f%z"))
         self.assertEqual(device.serial_number, device_payload['serialNumber'])
         self.assertEqual(device.updated_at, datetime.strptime(device_payload['updatedAt'], "%Y-%m-%dT%H:%M:%S.%f%z"))
+
+        # Check to_dict()
+        self.assertEqual(device.to_dict(), device_payload)
 
     def test_baby_mapping(self):
         """Test successful mapping from json payload"""
@@ -84,6 +90,14 @@ class TestSnooModels(TestCase):
         self.assertEqual(baby.updated_by_user_at,
                          datetime.strptime(baby_payload['updatedByUserAt'], "%Y-%m-%dT%H:%M:%S.%f%z"))
 
+        # Check to_dict()
+        baby_to_dict_payload = baby_payload
+        baby_to_dict_payload['baby'] = baby_payload['_id']
+        baby_to_dict_payload['birthDate'] = baby_to_dict_payload['birthDate'][:10]  # Remove time from ISO
+        baby_to_dict_payload['preemie'] = None
+        del baby_to_dict_payload['_id']
+        self.assertEqual(baby.to_dict(), baby_to_dict_payload)
+
     def test_last_session_mapping(self):
         """Test successful mapping from json payload"""
         last_session_payload = json.loads(load_fixture('', 'ss_v2_sessions_last__get_200.json'))
@@ -106,6 +120,16 @@ class TestSnooModels(TestCase):
             SessionLevel.LEVEL4,
             SessionLevel.ONLINE
         ])
+
+        # Check to_dict()
+        last_session_to_dict_payload = last_session_payload
+        last_session_to_dict_payload['levels'] = [item['level'] for item in last_session_to_dict_payload['levels']]
+        last_session_to_dict_payload['currentStatus'] = last_session.current_status.value
+
+        last_session_to_dict = last_session.to_dict()
+        # Hacky, solution for not mocking datetime.now().
+        last_session_to_dict_payload['currentStatusDuration'] = last_session_to_dict['currentStatusDuration']
+        self.assertEqual(last_session_to_dict, last_session_to_dict_payload)
 
     def test_aggregated_session_mapping(self):
         """Test successful mapping from json payload"""
@@ -130,6 +154,25 @@ class TestSnooModels(TestCase):
                              datetime.strptime(session_item_payload['startTime'], "%Y-%m-%d %H:%M:%S.%f"))
             self.assertEqual(session_item.state_duration, timedelta(seconds=session_item_payload['stateDuration']))
             self.assertEqual(session_item.type, SessionItemType(session_item_payload['type']))
+
+        # Check to_dict()
+        aggregated_session_to_dict_payload = aggregated_session_payload
+        aggregated_session_to_dict_payload['daySleep'] = str(
+            timedelta(seconds=aggregated_session_to_dict_payload['daySleep']))
+        aggregated_session_to_dict_payload['levels'] = [{
+            'isActive': item['isActive'],
+            'sessionId': item['sessionId'],
+            'startTime': item['startTime'].replace(' ', 'T'),
+            'stateDuration': str(timedelta(seconds=item['stateDuration'])),
+            'type': item['type'],
+        } for item in aggregated_session_to_dict_payload['levels']]
+        aggregated_session_to_dict_payload['longestSleep'] = str(
+            timedelta(seconds=aggregated_session_to_dict_payload['longestSleep']))
+        aggregated_session_to_dict_payload['nightSleep'] = str(
+            timedelta(seconds=aggregated_session_to_dict_payload['nightSleep']))
+        aggregated_session_to_dict_payload['totalSleep'] = str(
+            timedelta(seconds=aggregated_session_to_dict_payload['totalSleep']))
+        self.assertEqual(aggregated_session.to_dict(), aggregated_session_to_dict_payload)
 
     def test_aggregated_session_avg_mapping(self):
         """Test successful mapping from json payload"""
@@ -158,6 +201,31 @@ class TestSnooModels(TestCase):
                          [timedelta(seconds=item) for item in aggregated_session_avg_payload['days']['longestSleep']])
         self.assertEqual(aggregated_session_avg.days.night_wakings,
                          aggregated_session_avg_payload['days']['nightWakings'])
+
+        # Check to_dict()
+        aggregated_session_avg_to_dict_payload = aggregated_session_avg_payload
+        aggregated_session_avg_to_dict_payload['daySleepAVG'] = str(
+            timedelta(seconds=aggregated_session_avg_to_dict_payload['daySleepAVG']))
+        aggregated_session_avg_to_dict_payload['totalSleepAVG'] = str(
+            timedelta(seconds=aggregated_session_avg_to_dict_payload['totalSleepAVG']))
+        aggregated_session_avg_to_dict_payload['nightSleepAVG'] = str(
+            timedelta(seconds=aggregated_session_avg_to_dict_payload['nightSleepAVG']))
+        aggregated_session_avg_to_dict_payload['longestSleepAVG'] = str(
+            timedelta(seconds=aggregated_session_avg_to_dict_payload['longestSleepAVG']))
+
+        aggregated_session_avg_to_dict_payload['days']['daySleep'] = [
+            str(timedelta(seconds=item)) for item in aggregated_session_avg_to_dict_payload['days']['daySleep']
+        ]
+        aggregated_session_avg_to_dict_payload['days']['totalSleep'] = [
+            str(timedelta(seconds=item)) for item in aggregated_session_avg_to_dict_payload['days']['totalSleep']
+        ]
+        aggregated_session_avg_to_dict_payload['days']['nightSleep'] = [
+            str(timedelta(seconds=item)) for item in aggregated_session_avg_to_dict_payload['days']['nightSleep']
+        ]
+        aggregated_session_avg_to_dict_payload['days']['longestSleep'] = [
+            str(timedelta(seconds=item)) for item in aggregated_session_avg_to_dict_payload['days']['longestSleep']
+        ]
+        self.assertEqual(aggregated_session_avg.to_dict(), aggregated_session_avg_to_dict_payload)
 
     def test_activity_signal_mapping(self):
         """Test successful mapping from json payload"""
@@ -194,6 +262,33 @@ class TestSnooModels(TestCase):
                          activity_state_msg_payload['state_machine']['audio'] == 'on')
         self.assertEqual(activity_state.system_state, activity_state_msg_payload['system_state'])
         self.assertEqual(activity_state.event.value, activity_state_msg_payload['event'])
+
+        # Check to_dict()
+        activity_state_msg_to_dict_payload = activity_state_msg_payload
+        activity_state_msg_to_dict_payload['event_time'] = datetime.fromtimestamp(
+            activity_state_msg_to_dict_payload['event_time_ms'] / 1000, timezone.utc
+        ).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+        del activity_state_msg_to_dict_payload['event_time_ms']
+        activity_state_msg_to_dict_payload['left_safety_clip'] = bool(
+            activity_state_msg_to_dict_payload['left_safety_clip'])
+        activity_state_msg_to_dict_payload['right_safety_clip'] = bool(
+            activity_state_msg_to_dict_payload['right_safety_clip'])
+        activity_state_msg_to_dict_payload['state_machine']['audio'] = \
+            activity_state_msg_to_dict_payload['state_machine']['audio'] == 'on'
+        activity_state_msg_to_dict_payload['state_machine']['hold'] = \
+            activity_state_msg_to_dict_payload['state_machine']['hold'] == 'on'
+        activity_state_msg_to_dict_payload['state_machine']['is_active_session'] = \
+            activity_state_msg_to_dict_payload['state_machine']['is_active_session'] == 'true'
+        activity_state_msg_to_dict_payload['state_machine']['sticky_white_noise'] = \
+            activity_state_msg_to_dict_payload['state_machine']['sticky_white_noise'] == 'on'
+        activity_state_msg_to_dict_payload['state_machine']['weaning'] = \
+            activity_state_msg_to_dict_payload['state_machine']['weaning'] == 'on'
+        activity_state_msg_to_dict_payload['state_machine']['time_left'] = None
+        activity_state_msg_to_dict_payload['state_machine']['since_session_start'] = str(timedelta(
+            milliseconds=activity_state_msg_to_dict_payload['state_machine']['since_session_start_ms']
+        ))
+        del activity_state_msg_to_dict_payload['state_machine']['since_session_start_ms']
+        self.assertEqual(activity_state.to_dict(), activity_state_msg_to_dict_payload)
 
     def test_session_level(self):
         """Test SessionLevel Enum"""

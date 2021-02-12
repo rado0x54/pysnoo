@@ -61,14 +61,15 @@ class SnooPubNub:
                  access_token: str,
                  snoo_serial: str,
                  uuid: str,
-                 callback: Callable[[ActivityState], None]):
+                 callback: Callable[[ActivityState], None],
+                 custom_event_loop=None):
         """Initialize the Snoo PubNub object."""
         # self._access_token = access_token
         # self._snoo_serial = snoo_serial
         self._activiy_channel = 'ActivityState.{}'.format(snoo_serial)
         self._controlcommand_channel = 'ControlCommand.{}'.format(snoo_serial)
         self._pnconfig = self._setup_pnconfig(access_token, uuid)
-        self._pubnub = PubNubAsyncio(self._pnconfig)
+        self._pubnub = PubNubAsyncio(self._pnconfig, custom_event_loop=custom_event_loop)
         self._listener = SnooSubscribeListener(callback)
 
     @staticmethod

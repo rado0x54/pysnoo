@@ -1,4 +1,3 @@
-# coding: utf-8
 """PySnoo OAuth Session."""
 
 import json
@@ -10,7 +9,7 @@ from .const import (OAUTH_CLIENT_ID,
                     OAUTH_TOKEN_REFRESH_ENDPOINT,
                     OAUTH_LOGIN_ENDPOINT,
                     BASE_HEADERS)
-from .oauth.oauth2_session import OAuth2Session
+from .oauth2_session import OAuth2Session
 
 
 class SnooAuthSession(OAuth2Session):

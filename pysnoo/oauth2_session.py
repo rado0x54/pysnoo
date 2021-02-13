@@ -1,4 +1,3 @@
-# coding: utf-8
 """aiohttp_oauthlib client.
 
 Adapted from: https://gist.github.com/kellerza/5ca798f49983bb702bc6e7a05ba53def

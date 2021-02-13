@@ -7,7 +7,7 @@ from aiohttp import BasicAuth
 from asynctest import TestCase, patch, CoroutineMock, MagicMock, call
 from callee import Contains
 
-from pysnoo.oauth.oauth2_session import OAuth2Session, TokenUpdated, TokenExpiredError, InsecureTransportError
+from pysnoo.oauth2_session import OAuth2Session, TokenUpdated, TokenExpiredError, InsecureTransportError
 
 from tests.helpers import get_token
 

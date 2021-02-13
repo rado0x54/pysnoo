@@ -1,7 +1,7 @@
 """PySnoo setup script."""
 from setuptools import setup
 
-_VERSION = '0.0.1'
+_VERSION = '0.0.2'
 
 
 def readme():

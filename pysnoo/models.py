@@ -1,4 +1,3 @@
-# coding: utf-8
 """PySnoo Data Models."""
 from typing import List, Optional
 from dataclasses import dataclass

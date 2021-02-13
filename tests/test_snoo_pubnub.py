@@ -152,9 +152,9 @@ class TestSnooPubnub(TestCase):
         self.assertEqual(options.method_string, 'GET')
         # This needs to be called to retrieve the params from the configuration
         options.merge_params_in({})
-        self.assertEqual(options.query_string, f'count={count}&'
-                                               f'pnsdk=PubNub-Python-Asyncio%2F{self.pubnub._pubnub.SDK_VERSION}&'
-                                               f'uuid=UUID&auth=ACCESS_TOKEN')
+        self.assertEqual(
+            options.query_string, f'count={count}&pnsdk=PubNub-Python-Asyncio%2F{self.pubnub._pubnub.SDK_VERSION}&'
+                                  f'uuid=UUID&auth=ACCESS_TOKEN')
 
     async def test_message_callback(self):
         """Test listener Callback on Message"""

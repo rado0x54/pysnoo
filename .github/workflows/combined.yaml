@@ -26,10 +26,10 @@ jobs:
         pip install -r requirements.txt -r requirements_tests.txt
     - name: Lint with flake8
       run: |
-        flake8 pysnoo/ tests/
+        flake8 pysnoo/ scripts/ tests/
     - name: Lint with pylint
       run: |
-        pylint --rcfile=setup.cfg pysnoo/ tests/
+        pylint --rcfile=setup.cfg pysnoo/ scripts/ tests/
     - name: Test with pytest
       run: |
         python -m pytest --cov --cov-report term-missing --cov-config=setup.cfg

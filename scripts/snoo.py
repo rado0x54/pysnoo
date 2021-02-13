@@ -10,8 +10,11 @@ from datetime import datetime, timedelta
 from pysnoo import SnooAuthSession, Snoo, SnooPubNub, SessionLevel
 from pysnoo.models import dt_str_to_dt
 
+# pylint: disable=unused-argument
+
 
 async def _setup_pubnub(snoo: Snoo, callback):
+    """Utility Function to setup SnooPubNub"""
     # Also checks for valid token
     devices = await snoo.get_devices()
     if not devices:
@@ -20,53 +23,71 @@ async def _setup_pubnub(snoo: Snoo, callback):
         return
 
     return SnooPubNub(snoo.auth.access_token,
-                        devices[0].serial_number,
-                        f'pn-pysnoo-{devices[0].serial_number}',
-                        callback)
+                      devices[0].serial_number,
+                      f'pn-pysnoo-{devices[0].serial_number}',
+                      callback)
+
 
 async def user(snoo: Snoo, args):
+    """user command"""
     resonse = await snoo.get_me()
     pprint(resonse.to_dict())
 
+
 async def device(snoo: Snoo, args):
-    devices = await snoo.get_devices()
-    if len(devices) > 0:
-        pprint(devices[0].to_dict())
+    """device command"""
+    resonse = await snoo.get_devices()
+    if len(resonse) > 0:
+        pprint(resonse[0].to_dict())
+
 
 async def baby(snoo: Snoo, args):
-    baby = await snoo.get_baby()
-    pprint(baby.to_dict())
+    """baby command"""
+    resonse = await snoo.get_baby()
+    pprint(resonse.to_dict())
+
 
 async def last_session(snoo: Snoo, args):
-    last_session = await snoo.get_last_session()
-    pprint(last_session.to_dict())
+    """last_session command"""
+    resonse = await snoo.get_last_session()
+    pprint(resonse.to_dict())
+
 
 async def status(snoo: Snoo, args):
-    last_session = await snoo.get_last_session()
-    print(f'{last_session.current_status.value} (since: {last_session.current_status_duration})')
+    """status command"""
+    resonse = await snoo.get_last_session()
+    print(f'{resonse.current_status.value} (since: {resonse.current_status_duration})')
+
 
 async def session(snoo: Snoo, args):
-    session = await snoo.get_aggregated_session(args.datetime)
-    pprint(session.to_dict())
+    """session command"""
+    resonse = await snoo.get_aggregated_session(args.datetime)
+    pprint(resonse.to_dict())
+
 
 async def session_avg(snoo: Snoo, args):
-    baby = await snoo.get_baby()
-    session_avg = await snoo.get_aggregated_session_avg(baby.baby, args.datetime)
-    pprint(session_avg.to_dict())
+    """session_avg command"""
+    baby_resonse = await snoo.get_baby()
+    resonse = await snoo.get_aggregated_session_avg(baby_resonse.baby, args.datetime)
+    pprint(resonse.to_dict())
+
 
 async def total(snoo: Snoo, args):
-    baby = await snoo.get_baby()
-    total = await snoo.get_session_total_time(baby.baby)
-    print(total)
+    """total command"""
+    baby_resonse = await snoo.get_baby()
+    resonse = await snoo.get_session_total_time(baby_resonse.baby)
+    print(resonse)
+
 
 async def monitor(snoo: Snoo, args):
-    def cb(activity_state):
+    """monitor command"""
+    def as_callback(activity_state):
         pprint(activity_state.to_dict())
 
-    pubnub = await _setup_pubnub(snoo, cb)
+    pubnub = await _setup_pubnub(snoo, as_callback)
 
     for activity_state in await pubnub.history():
-        cb(activity_state)
+        as_callback(activity_state)
 
     await pubnub.subscribe()
 
@@ -81,6 +102,7 @@ async def monitor(snoo: Snoo, args):
 
 
 async def history(snoo: Snoo, args):
+    """history command"""
     pubnub = await _setup_pubnub(snoo, None)
 
     for activity_state in await pubnub.history(100):
@@ -88,7 +110,9 @@ async def history(snoo: Snoo, args):
 
     await pubnub.stop()
 
+
 async def toggle(snoo: Snoo, args):
+    """toggle command"""
     pubnub = await _setup_pubnub(snoo, None)
 
     last_activity_state = (await pubnub.history())[0]
@@ -102,7 +126,8 @@ async def toggle(snoo: Snoo, args):
     await pubnub.stop()
 
 
-async def toggleHold(snoo: Snoo, args):
+async def toggle_hold(snoo: Snoo, args):
+    """toggleHold command"""
     pubnub = await _setup_pubnub(snoo, None)
 
     last_activity_state = (await pubnub.history())[0]
@@ -117,7 +142,8 @@ async def toggleHold(snoo: Snoo, args):
     await pubnub.stop()
 
 
-async def up(snoo: Snoo, args):
+async def level_up(snoo: Snoo, args):
+    """up command"""
     pubnub = await _setup_pubnub(snoo, None)
 
     last_activity_state = (await pubnub.history())[0]
@@ -131,7 +157,8 @@ async def up(snoo: Snoo, args):
     await pubnub.stop()
 
 
-async def down(snoo: Snoo):
+async def level_down(snoo: Snoo, args):
+    """down command"""
     pubnub = await _setup_pubnub(snoo, None)
 
     last_activity_state = (await pubnub.history())[0]
@@ -158,9 +185,9 @@ commands = {
     'monitor': monitor,
     'history': history,
     'toggle': toggle,
-    'toggleHold': toggleHold,
-    'up': up,
-    'down': down,
+    'toggle_hold': toggle_hold,
+    'up': level_up,
+    'down': level_down,
 }
 
 
@@ -215,7 +242,7 @@ def main():
         'command', default='user', choices=['user', 'device', 'baby',
                                             'last_session', 'status', 'session',
                                             'session_avg', 'total', 'monitor',
-                                            'history', 'toggle', 'toggleHold', 'up', 'down']
+                                            'history', 'toggle', 'toggle_hold', 'up', 'down']
     )
 
     parser.add_argument('-u',
@@ -238,8 +265,8 @@ def main():
                         '--datetime',
                         default=datetime.now() - timedelta(1),  # 24h prior
                         type=dt_str_to_dt,
-                        help='Datetime in ISO8601 fromat. Used for some commands.',
-    )
+                        help='Datetime in ISO8601 fromat. Used for some commands.'
+                        )
 
     args = parser.parse_args()
     token = get_token(args.token_file)
@@ -256,6 +283,7 @@ def main():
         asyncio.run(async_main(args.username, args.password, token, token_updater, args))
     except KeyboardInterrupt:
         pass
+
 
 if __name__ == "__main__":
     main()

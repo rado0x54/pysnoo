@@ -35,22 +35,16 @@ class SnooSubscribeListener(SubscribeCallback):
 
     def presence(self, pubnub, presence):
         """PubNub Presence Callback Implementation"""
-        print('presence')
-        print(presence)
 
     async def wait_for_connect(self):
         """Async utility function that waits for subscription connect."""
         if not self.connected_event.is_set():
             await self.connected_event.wait()
-        else:
-            raise Exception("instance is already connected")
 
     async def wait_for_disconnect(self):
         """Async utility function that waits for subscription disconnect."""
         if not self.disconnected_event.is_set():
             await self.disconnected_event.wait()
-        else:
-            raise Exception("instance is already disconnected")
 
 
 class SnooPubNub:

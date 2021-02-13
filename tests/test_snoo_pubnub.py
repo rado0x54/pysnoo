@@ -1,23 +1,26 @@
 """TestClass for the Snoo Pubnub"""
+import json
+
 from pubnub.enums import PNOperationType, PNStatusCategory
 from pubnub.callbacks import SubscribeCallback
 from pubnub.models.consumer.common import PNStatus
+from pubnub.models.consumer.pubsub import PNMessageResult
 
 from asynctest import TestCase, patch, MagicMock
-from pysnoo import SnooPubNub, SessionLevel
+from pysnoo import SnooPubNub, SessionLevel, ActivityState
 from pysnoo.const import SNOO_PUBNUB_PUBLISH_KEY, SNOO_PUBNUB_SUBSCRIBE_KEY
+
+from tests.helpers import load_fixture
 
 
 class TestSnooPubnub(TestCase):
     """Snoo Client PubNub class"""
 
     def setUp(self):
-        print('SetUp PubNub Service')
-        callback = MagicMock()
         self.pubnub = SnooPubNub('ACCESS_TOKEN',
                                  'SERIAL_NUMBER',
                                  'UUID',
-                                 callback,
+                                 MagicMock(),
                                  custom_event_loop=self.loop)
 
     async def tearDown(self):
@@ -152,3 +155,17 @@ class TestSnooPubnub(TestCase):
         self.assertEqual(options.query_string, f'count={count}&'
                                                f'pnsdk=PubNub-Python-Asyncio%2F{self.pubnub._pubnub.SDK_VERSION}&'
                                                f'uuid=UUID&auth=ACCESS_TOKEN')
+
+    async def test_message_callback(self):
+        """Test listener Callback on Message"""
+        activity_state_msg_payload = json.loads(
+            load_fixture('', 'pubnub_message_ActivityState.json'))
+        activity_state = ActivityState.from_dict(activity_state_msg_payload)
+
+        # pylint: disable=protected-access
+        callback = self.pubnub._listener._callback
+
+        self.pubnub._listener.message(self.pubnub._pubnub, PNMessageResult(
+            activity_state_msg_payload, None, None, 0))
+
+        callback.assert_called_once_with(activity_state)

@@ -1,7 +1,7 @@
 """PySnoo setup script."""
 from setuptools import setup
 
-_VERSION = '0.0.3'
+_VERSION = '0.1.0'
 
 
 def readme():
@@ -22,7 +22,7 @@ setup(
     author_email='web@riedel-it.de',
     url='https://github.com/rado0x54/pysnoo',
     license='MIT',
-    python_requires='>=3.7',
+    python_requires='>=3.7, <4',
     include_package_data=True,
     install_requires=['oauthlib', 'aiohttp', 'pubnub>=5.0.0'],
     test_suite='tests',

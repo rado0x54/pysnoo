@@ -31,6 +31,7 @@ class TestSnooPubnub(TestCase):
     @patch('pubnub.pubnub_asyncio.PubNubAsyncio.request_future')
     async def test_publish_start(self, mocked_request):
         """Test publish_start"""
+        # pylint: disable=protected-access
         # Setup
         await self.pubnub.publish_start()
 
@@ -44,13 +45,13 @@ class TestSnooPubnub(TestCase):
         self.assertEqual(options.method_string, 'GET')
         # This needs to be called to retrieve the params from the configuration
         options.merge_params_in({})
-        # pylint: disable=protected-access
         self.assertEqual(options.query_string,
                          f'auth=ACCESS_TOKEN&pnsdk=PubNub-Python-Asyncio%2F{self.pubnub._pubnub.SDK_VERSION}&uuid=UUID')
 
     @patch('pubnub.pubnub_asyncio.PubNubAsyncio.request_future')
     async def test_publish_goto_state(self, mocked_request):
         """Test publish_goto_state"""
+        # pylint: disable=protected-access
         # Setup
         await self.pubnub.publish_goto_state(SessionLevel.LEVEL1)
 
@@ -65,13 +66,13 @@ class TestSnooPubnub(TestCase):
         self.assertEqual(options.method_string, 'GET')
         # This needs to be called to retrieve the params from the configuration
         options.merge_params_in({})
-        # pylint: disable=protected-access
         self.assertEqual(options.query_string,
                          f'auth=ACCESS_TOKEN&pnsdk=PubNub-Python-Asyncio%2F{self.pubnub._pubnub.SDK_VERSION}&uuid=UUID')
 
     @patch('pubnub.pubnub_asyncio.PubNubAsyncio.request_future')
     async def test_publish_goto_state_with_hold(self, mocked_request):
         """Test publish_goto_state with hold parameter"""
+        # pylint: disable=protected-access
         # Setup
         await self.pubnub.publish_goto_state(SessionLevel.LEVEL2, hold=False)
 
@@ -87,7 +88,6 @@ class TestSnooPubnub(TestCase):
         self.assertEqual(options.method_string, 'GET')
         # This needs to be called to retrieve the params from the configuration
         options.merge_params_in({})
-        # pylint: disable=protected-access
         self.assertEqual(options.query_string,
                          f'auth=ACCESS_TOKEN&pnsdk=PubNub-Python-Asyncio%2F{self.pubnub._pubnub.SDK_VERSION}&uuid=UUID')
 
@@ -119,12 +119,12 @@ class TestSnooPubnub(TestCase):
     @patch('pubnub.managers.SubscriptionManager.adapt_unsubscribe_builder')
     async def test_unsubscribe(self, mocked_unsubscribe_builder):
         """Test unsubscribe"""
+        # pylint: disable=protected-access
         # Call Connect Status.
         pn_status = PNStatus()
         pn_status.category = PNStatusCategory.PNAcknowledgmentCategory
         pn_status.operation = PNOperationType.PNUnsubscribeOperation
         # Call after 1s: listener.status(self.pubnub._pubnub, pn_status)
-        # pylint: disable=protected-access
         self.loop.call_later(1, self.pubnub._listener.status, self.pubnub._pubnub, pn_status)
 
         await self.pubnub.unsubscribe()
@@ -137,6 +137,7 @@ class TestSnooPubnub(TestCase):
     @patch('pubnub.pubnub_asyncio.PubNubAsyncio.request_future')
     async def test_history(self, mocked_request):
         """Test history"""
+        # pylint: disable=protected-access
 
         count = 55
         await self.pubnub.history(count)
@@ -151,18 +152,17 @@ class TestSnooPubnub(TestCase):
         self.assertEqual(options.method_string, 'GET')
         # This needs to be called to retrieve the params from the configuration
         options.merge_params_in({})
-        # pylint: disable=protected-access
         self.assertEqual(options.query_string, f'count={count}&'
                                                f'pnsdk=PubNub-Python-Asyncio%2F{self.pubnub._pubnub.SDK_VERSION}&'
                                                f'uuid=UUID&auth=ACCESS_TOKEN')
 
     async def test_message_callback(self):
         """Test listener Callback on Message"""
+        # pylint: disable=protected-access
         activity_state_msg_payload = json.loads(
             load_fixture('', 'pubnub_message_ActivityState.json'))
         activity_state = ActivityState.from_dict(activity_state_msg_payload)
 
-        # pylint: disable=protected-access
         callback = self.pubnub._listener._callback
 
         self.pubnub._listener.message(self.pubnub._pubnub, PNMessageResult(

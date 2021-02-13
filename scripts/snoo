@@ -59,8 +59,8 @@ async def status(snoo: Snoo, args):
     print(f'{resonse.current_status.value} (since: {resonse.current_status_duration})')
 
 
-async def session(snoo: Snoo, args):
-    """session command"""
+async def sessions(snoo: Snoo, args):
+    """sessions command"""
     resonse = await snoo.get_aggregated_session(args.datetime)
     pprint(resonse.to_dict())
 
@@ -179,7 +179,7 @@ commands = {
     'baby': baby,
     'last_session': last_session,
     'status': status,
-    'session': session,
+    'sessions': sessions,
     'session_avg': session_avg,
     'total': total,
     'monitor': monitor,
@@ -240,7 +240,7 @@ def main():
 
     parser.add_argument(
         'command', default='user', choices=['user', 'device', 'baby',
-                                            'last_session', 'status', 'session',
+                                            'last_session', 'status', 'sessions',
                                             'session_avg', 'total', 'monitor',
                                             'history', 'toggle', 'toggle_hold', 'up', 'down']
     )

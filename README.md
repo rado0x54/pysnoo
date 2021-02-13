@@ -63,7 +63,7 @@ The pysnoo package contains the `snoo` CLI tool:
 Snoo Smart Bassinett
 
 positional arguments:
-  {user,device,baby,last_session,status,session,session_avg,total,monitor,history,toggle,toggle_hold,up,down}
+  {user,device,baby,last_session,status,sessions,session_avg,total,monitor,history,toggle,toggle_hold,up,down}
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -242,13 +242,13 @@ Some of these settings can be upgraded programmatically.
  'startTime': '2021-02-13T15:00:42.604Z'}
 ```
 
-#### session
-`snoo session -d DATETIME` returns all sessions within a `24h` segement AFTER `DATETIME` in ISO8601
+#### sessions
+`snoo sessions -d DATETIME` returns all sessions within a `24h` segement AFTER `DATETIME` in ISO8601
 format. Note `DATETIME` does not respect any timezone information, but assumes the local timezone
 that is that up within the account. If not specified `DATETIME` is the timestamp 24h before.
 
 ```shell
-# snoo session -d 2021-01-30T07:00:00
+# snoo sessions -d 2021-01-30T07:00:00
 {'daySleep': '4:46:18',
  'levels': [{'isActive': False,
              'sessionId': '1538910189',

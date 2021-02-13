@@ -107,7 +107,7 @@ class TestSnooPubnub(TestCase):
 
         mocked_add_listener.assert_called_once()
         mocked_subscribe_builder.assert_called_once()
-        subscribe_operation = mocked_subscribe_builder.call_args.args[0]
+        subscribe_operation = mocked_subscribe_builder.mock_calls[0][1][0]
         self.assertEqual(subscribe_operation.channels, ['ActivityState.SERIAL_NUMBER'])
         self.assertEqual(subscribe_operation.channel_groups, [])
         self.assertEqual(subscribe_operation.presence_enabled, False)
@@ -127,7 +127,7 @@ class TestSnooPubnub(TestCase):
         await self.pubnub.unsubscribe()
 
         mocked_unsubscribe_builder.assert_called_once()
-        unsubscribe_operation = mocked_unsubscribe_builder.call_args.args[0]
+        unsubscribe_operation = mocked_unsubscribe_builder.mock_calls[0][1][0]
         self.assertEqual(unsubscribe_operation.channels, ['ActivityState.SERIAL_NUMBER'])
         self.assertEqual(unsubscribe_operation.channel_groups, [])
 

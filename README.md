@@ -39,10 +39,9 @@ async with SnooAuthSession(token, token_updater) as auth:
         print('There is no Snoo connected to that account!')
     else:
         # Snoo PubNub Interface
-        pubnub = SnooPubNub(snoo.auth.access_token,
-                          devices[0].serial_number,
-                          f'pn-pysnoo-{devices[0].serial_number}',
-                          callback)
+        pubnub = SnooPubNub(auth.access_token,
+                            devices[0].serial_number,
+                            f'pn-pysnoo-{devices[0].serial_number}')
     
         last_activity_state = (await pubnub.history())[0]
         if last_activity_state.state_machine.state == SessionLevel.ONLINE:

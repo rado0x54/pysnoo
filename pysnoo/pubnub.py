@@ -1,7 +1,7 @@
 """PySnoo PubNub Interface."""
 import asyncio
 import logging
-from typing import Callable, Optional
+from typing import Callable, Optional, List
 
 from pubnub.callbacks import SubscribeCallback
 from pubnub.pnconfiguration import PNConfiguration
@@ -53,18 +53,17 @@ class SnooPubNub:
 
     def __init__(self,
                  access_token: str,
-                 snoo_serial: str,
+                 serial_number: str,
                  uuid: str,
-                 callback: Callable[[ActivityState], None],
                  custom_event_loop=None):
         """Initialize the Snoo PubNub object."""
-        # self._access_token = access_token
-        # self._snoo_serial = snoo_serial
-        self._activiy_channel = 'ActivityState.{}'.format(snoo_serial)
-        self._controlcommand_channel = 'ControlCommand.{}'.format(snoo_serial)
-        self._pnconfig = self._setup_pnconfig(access_token, uuid)
-        self._pubnub = PubNubAsyncio(self._pnconfig, custom_event_loop=custom_event_loop)
-        self._listener = SnooSubscribeListener(callback)
+        self.config = self._setup_pnconfig(access_token, uuid)
+        self.serial_number = serial_number
+        self._activiy_channel = 'ActivityState.{}'.format(serial_number)
+        self._controlcommand_channel = 'ControlCommand.{}'.format(serial_number)
+        self._pubnub = PubNubAsyncio(self.config, custom_event_loop=custom_event_loop)
+        self._listener = SnooSubscribeListener(self._activy_state_callback)
+        self._external_listeners: List[Callable[[ActivityState], None]] = []
 
     @staticmethod
     def _setup_pnconfig(access_token, uuid):
@@ -76,6 +75,25 @@ class SnooPubNub:
         pnconfig.auth_key = access_token
         pnconfig.ssl = True
         return pnconfig
+
+    def add_listener(self, update_callback: Callable[[ActivityState], None]) -> Callable[[], None]:
+        """Add a AcitivyState Listener to the SnooPubNub Entity and returns a remove_listener CB for that listener"""
+        self._external_listeners.append(update_callback)
+
+        def remove_listener_cb() -> None:
+            """Remove listener."""
+            self.remove_listener(update_callback)
+
+        return remove_listener_cb
+
+    def remove_listener(self, update_callback: Callable[[ActivityState], None]) -> None:
+        """Remove data update."""
+        self._external_listeners.remove(update_callback)
+
+    def _activy_state_callback(self, state: ActivityState):
+        """Internal Callback of SnooSubscribeListener"""
+        for update_callback in self._external_listeners:
+            update_callback(state)
 
     async def subscribe(self):
         """Subscribe to Snoo Activity Channel"""

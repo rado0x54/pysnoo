@@ -13,7 +13,7 @@ from pysnoo.models import dt_str_to_dt
 # pylint: disable=unused-argument
 
 
-async def _setup_pubnub(snoo: Snoo, callback):
+async def _setup_pubnub(snoo: Snoo):
     """Utility Function to setup SnooPubNub"""
     # Also checks for valid token
     devices = await snoo.get_devices()
@@ -24,8 +24,7 @@ async def _setup_pubnub(snoo: Snoo, callback):
 
     return SnooPubNub(snoo.auth.access_token,
                       devices[0].serial_number,
-                      f'pn-pysnoo-{devices[0].serial_number}',
-                      callback)
+                      f'pn-pysnoo-{devices[0].serial_number}')
 
 
 async def user(snoo: Snoo, args):
@@ -84,7 +83,8 @@ async def monitor(snoo: Snoo, args):
     def as_callback(activity_state):
         pprint(activity_state.to_dict())
 
-    pubnub = await _setup_pubnub(snoo, as_callback)
+    pubnub = await _setup_pubnub(snoo)
+    pubnub.add_listener(as_callback)
 
     for activity_state in await pubnub.history():
         as_callback(activity_state)
@@ -103,7 +103,7 @@ async def monitor(snoo: Snoo, args):
 
 async def history(snoo: Snoo, args):
     """history command"""
-    pubnub = await _setup_pubnub(snoo, None)
+    pubnub = await _setup_pubnub(snoo)
 
     for activity_state in await pubnub.history(100):
         pprint(activity_state.to_dict())
@@ -113,7 +113,7 @@ async def history(snoo: Snoo, args):
 
 async def toggle(snoo: Snoo, args):
     """toggle command"""
-    pubnub = await _setup_pubnub(snoo, None)
+    pubnub = await _setup_pubnub(snoo)
 
     last_activity_state = (await pubnub.history())[0]
     if last_activity_state.state_machine.state == SessionLevel.ONLINE:
@@ -128,7 +128,7 @@ async def toggle(snoo: Snoo, args):
 
 async def toggle_hold(snoo: Snoo, args):
     """toggleHold command"""
-    pubnub = await _setup_pubnub(snoo, None)
+    pubnub = await _setup_pubnub(snoo)
 
     last_activity_state = (await pubnub.history())[0]
     current_state = last_activity_state.state_machine.state
@@ -144,7 +144,7 @@ async def toggle_hold(snoo: Snoo, args):
 
 async def level_up(snoo: Snoo, args):
     """up command"""
-    pubnub = await _setup_pubnub(snoo, None)
+    pubnub = await _setup_pubnub(snoo)
 
     last_activity_state = (await pubnub.history())[0]
     up_transition = last_activity_state.state_machine.up_transition
@@ -159,7 +159,7 @@ async def level_up(snoo: Snoo, args):
 
 async def level_down(snoo: Snoo, args):
     """down command"""
-    pubnub = await _setup_pubnub(snoo, None)
+    pubnub = await _setup_pubnub(snoo)
 
     last_activity_state = (await pubnub.history())[0]
     down_transition = last_activity_state.state_machine.down_transition

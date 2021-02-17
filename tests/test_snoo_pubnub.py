@@ -20,7 +20,6 @@ class TestSnooPubnub(TestCase):
         self.pubnub = SnooPubNub('ACCESS_TOKEN',
                                  'SERIAL_NUMBER',
                                  'UUID',
-                                 MagicMock(),
                                  custom_event_loop=self.loop)
 
     async def tearDown(self):
@@ -163,9 +162,18 @@ class TestSnooPubnub(TestCase):
             load_fixture('', 'pubnub_message_ActivityState.json'))
         activity_state = ActivityState.from_dict(activity_state_msg_payload)
 
-        callback = self.pubnub._listener._callback
+        # Add callback
+        callback = MagicMock()
+        remove_cb = self.pubnub.add_listener(callback)
 
+        self.assertEqual(self.pubnub._external_listeners, [callback])
+
+        # Trigger callback
         self.pubnub._listener.message(self.pubnub._pubnub, PNMessageResult(
             activity_state_msg_payload, None, None, 0))
 
         callback.assert_called_once_with(activity_state)
+
+        # Remove callback
+        remove_cb()
+        self.assertEqual(self.pubnub._external_listeners, [])

@@ -2,7 +2,6 @@
 import json
 
 from pubnub.enums import PNOperationType, PNStatusCategory
-from pubnub.callbacks import SubscribeCallback
 from pubnub.models.consumer.common import PNStatus
 from pubnub.models.consumer.pubsub import PNMessageResult
 
@@ -90,24 +89,19 @@ class TestSnooPubnub(TestCase):
         self.assertEqual(options.query_string,
                          f'auth=ACCESS_TOKEN&pnsdk=PubNub-Python-Asyncio%2F{self.pubnub._pubnub.SDK_VERSION}&uuid=UUID')
 
-    @patch('pubnub.pubnub_core.PubNubCore.add_listener')
     @patch('pubnub.managers.SubscriptionManager.adapt_subscribe_builder')
-    async def test_subscribe(self, mocked_subscribe_builder, mocked_add_listener):
+    async def test_subscribe_and_await_connect(self, mocked_subscribe_builder):
         """Test subscribe"""
-        # Setup
+        # pylint: disable=protected-access
+        # Call Connect Status.
+        pn_status = PNStatus()
+        pn_status.category = PNStatusCategory.PNConnectedCategory
+        # Call after 1s: listener.status(self.pubnub._pubnub, pn_status)
+        self.loop.call_later(1, self.pubnub._listener.status,
+                             self.pubnub._pubnub, pn_status)
 
-        def add_listener_side_effect(listener: SubscribeCallback):
-            # Call Connect Status.
-            pn_status = PNStatus()
-            pn_status.category = PNStatusCategory.PNConnectedCategory
-            # Call after 1s: listener.status(self.pubnub._pubnub, pn_status)
-            self.loop.call_later(1, listener.status, self.pubnub._pubnub, pn_status)  # pylint: disable=protected-access
+        await self.pubnub.subscribe_and_await_connect()
 
-        mocked_add_listener.side_effect = add_listener_side_effect
-
-        await self.pubnub.subscribe()
-
-        mocked_add_listener.assert_called_once()
         mocked_subscribe_builder.assert_called_once()
         subscribe_operation = mocked_subscribe_builder.mock_calls[0][1][0]
         self.assertEqual(subscribe_operation.channels, ['ActivityState.SERIAL_NUMBER'])
@@ -115,8 +109,19 @@ class TestSnooPubnub(TestCase):
         self.assertEqual(subscribe_operation.presence_enabled, False)
         self.assertEqual(subscribe_operation.timetoken, 0)
 
+    @patch('pubnub.managers.SubscriptionManager.adapt_subscribe_builder')
+    def test_prevent_multiple_subscription(self, mocked_subscribe_builder):
+        """Test prevent multiple subscriptions"""
+        # pylint: disable=protected-access
+        # Set Listener as connected
+        self.pubnub._listener.connected_event.set()
+
+        self.pubnub.subscribe()
+
+        mocked_subscribe_builder.assert_not_called()
+
     @patch('pubnub.managers.SubscriptionManager.adapt_unsubscribe_builder')
-    async def test_unsubscribe(self, mocked_unsubscribe_builder):
+    async def test_unsubscribe_and_await_disconnect(self, mocked_unsubscribe_builder):
         """Test unsubscribe"""
         # pylint: disable=protected-access
         # Call Connect Status.
@@ -125,13 +130,24 @@ class TestSnooPubnub(TestCase):
         pn_status.operation = PNOperationType.PNUnsubscribeOperation
         # Call after 1s: listener.status(self.pubnub._pubnub, pn_status)
         self.loop.call_later(1, self.pubnub._listener.status, self.pubnub._pubnub, pn_status)
+        # Listener is connected:
+        self.pubnub._listener.connected_event.set()
 
-        await self.pubnub.unsubscribe()
+        await self.pubnub.unsubscribe_and_await_disconnect()
 
         mocked_unsubscribe_builder.assert_called_once()
         unsubscribe_operation = mocked_unsubscribe_builder.mock_calls[0][1][0]
         self.assertEqual(unsubscribe_operation.channels, ['ActivityState.SERIAL_NUMBER'])
         self.assertEqual(unsubscribe_operation.channel_groups, [])
+
+    @patch('pubnub.managers.SubscriptionManager.adapt_unsubscribe_builder')
+    def test_prevent_multiple_unsubscription(self, mocked_unsubscribe_builder):
+        """Test prevent multiple unsubscriptions"""
+
+        # Listener is disconnected (initial state)
+        self.pubnub.unsubscribe()
+
+        mocked_unsubscribe_builder.assert_not_called()
 
     @patch('pubnub.pubnub_asyncio.PubNubAsyncio.request_future')
     async def test_history(self, mocked_request):

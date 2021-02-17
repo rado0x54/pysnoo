@@ -10,6 +10,8 @@ from pubnub.pubnub_asyncio import PubNubAsyncio, utils
 from .models import ActivityState, SessionLevel
 from .const import SNOO_PUBNUB_PUBLISH_KEY, SNOO_PUBNUB_SUBSCRIBE_KEY
 
+_LOGGER = logging.getLogger(__name__)
+
 
 class SnooSubscribeListener(SubscribeCallback):
     """Snoo Subscription Listener Class"""
@@ -24,10 +26,12 @@ class SnooSubscribeListener(SubscribeCallback):
         """PubNub Status Callback Implementation"""
         if utils.is_subscribed_event(status) and not self.connected_event.is_set():
             self.connected_event.set()
+            self.disconnected_event.clear()
         elif utils.is_unsubscribed_event(status) and not self.disconnected_event.is_set():
             self.disconnected_event.set()
+            self.connected_event.clear()
         elif status.is_error():
-            logging.error('Error in Snoo PubNub Listener of Category: %s', status.category)
+            _LOGGER.error('Error in Snoo PubNub Listener of Category: %s', status.category)
 
     def message(self, pubnub, message):
         """PubNub Message Callback Implementation"""
@@ -35,6 +39,10 @@ class SnooSubscribeListener(SubscribeCallback):
 
     def presence(self, pubnub, presence):
         """PubNub Presence Callback Implementation"""
+
+    def is_connected(self):
+        """Returns true if the listener is currently connected to an active subscription"""
+        return self.connected_event.is_set()
 
     async def wait_for_connect(self):
         """Async utility function that waits for subscription connect."""
@@ -63,6 +71,8 @@ class SnooPubNub:
         self._controlcommand_channel = 'ControlCommand.{}'.format(serial_number)
         self._pubnub = PubNubAsyncio(self.config, custom_event_loop=custom_event_loop)
         self._listener = SnooSubscribeListener(self._activy_state_callback)
+        # Add listener
+        self._pubnub.add_listener(self._listener)
         self._external_listeners: List[Callable[[ActivityState], None]] = []
 
     @staticmethod
@@ -95,20 +105,35 @@ class SnooPubNub:
         for update_callback in self._external_listeners:
             update_callback(state)
 
-    async def subscribe(self):
+    def subscribe(self):
         """Subscribe to Snoo Activity Channel"""
-        self._pubnub.add_listener(self._listener)
+        if self._listener.is_connected():
+            _LOGGER.warning('Trying to subscribe PubNub instance that is already subscribed to %s',
+                            self._activiy_channel)
+            return
+
         self._pubnub.subscribe().channels([
             self._activiy_channel
         ]).execute()
 
+    async def subscribe_and_await_connect(self):
+        """Subscribe to Snoo Activity Channel and await connect"""
+        self.subscribe()
         await self._listener.wait_for_connect()
 
-    async def unsubscribe(self):
+    def unsubscribe(self):
         """Unsubscribe to Snoo Activity Channel"""
+        if not self._listener.is_connected():
+            _LOGGER.warning('Trying to unsubscribe PubNub instance that is NOT subscribed to %s', self._activiy_channel)
+            return
+
         self._pubnub.unsubscribe().channels(
             self._activiy_channel
         ).execute()
+
+    async def unsubscribe_and_await_disconnect(self):
+        """Unsubscribe to Snoo Activity Channel and await disconnect"""
+        self.unsubscribe()
         await self._listener.wait_for_disconnect()
 
     async def history(self, count=1):

@@ -89,7 +89,7 @@ async def monitor(snoo: Snoo, args):
     for activity_state in await pubnub.history():
         as_callback(activity_state)
 
-    await pubnub.subscribe()
+    await pubnub.subscribe_and_await_connect()
 
     try:
         while True:
@@ -97,7 +97,7 @@ async def monitor(snoo: Snoo, args):
     except asyncio.CancelledError:
         pass
     finally:
-        await pubnub.unsubscribe()
+        await pubnub.unsubscribe_and_await_disconnect()
         await pubnub.stop()
 
 

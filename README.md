@@ -17,11 +17,13 @@ pip install pysnoo
 
 ## Programmatic Usage
 Programatically, the project provides two main class inferfaces. The Snoo API Client interface
-[snoo.py](./pysnoo/snoo.py) and the Snoo PubNub interface [pubnub.py](./pysnoo/pubnub.py).
+[snoo.py](https://github.com/rado0x54/pysnoo/blob/master/pysnoo/snoo.py) and the Snoo PubNub 
+interface [pubnub.py](https://github.com/rado0x54/pysnoo/blob/master/pysnoo/pubnub.py).
 
 Here's a short example to setup both. It uses the Snoo API Interface to get the Snoo serial number,
 and access token, which are required to initialize the PubNub interface. More usage examples can be
-found by looking at the [CLI Tool](./scripts/snoo) or the [unit tests](./tests).
+found by looking at the [CLI Tool](https://github.com/rado0x54/pysnoo/blob/master/scripts/snoo) or
+the [unit tests](https://github.com/rado0x54/pysnoo/tree/master/tests).
 
 ```python
 async with SnooAuthSession(token, token_updater) as auth:
@@ -39,10 +41,9 @@ async with SnooAuthSession(token, token_updater) as auth:
         print('There is no Snoo connected to that account!')
     else:
         # Snoo PubNub Interface
-        pubnub = SnooPubNub(snoo.auth.access_token,
-                          devices[0].serial_number,
-                          f'pn-pysnoo-{devices[0].serial_number}',
-                          callback)
+        pubnub = SnooPubNub(auth.access_token,
+                            devices[0].serial_number,
+                            f'pn-pysnoo-{devices[0].serial_number}')
     
         last_activity_state = (await pubnub.history())[0]
         if last_activity_state.state_machine.state == SessionLevel.ONLINE:

@@ -323,6 +323,7 @@ class SessionLevel(Enum):
     LEVEL4 = 'LEVEL4'
     NONE = 'NONE'
     PRETIMEOUT = 'PRETIMEOUT'
+    TIMEOUT = 'TIMEOUT'
 
     def is_active_level(self):
         """Returns true if the Enum value represents an active level."""
@@ -631,6 +632,7 @@ class EventType(Enum):
     TIMER = 'timer'
     COMMAND = 'command'
     SAFETY_CLIP = 'safety_clip'
+    STICKY_WHITE_NOISE_UPDATED = 'sticky_white_noise_updated'
 
 
 @dataclass(frozen=True)

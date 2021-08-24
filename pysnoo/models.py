@@ -221,6 +221,7 @@ class Settings:
     offline_lock: bool
     # App restriction is 5-12 (am)
     daytime_start: int
+    sticky_white_noise_timeout: int
 
     @staticmethod
     def from_dict(data: dict):
@@ -234,7 +235,8 @@ class Settings:
             weaning=data.get("weaning", False),
             car_ride_mode=data.get("carRideMode", False),
             offline_lock=data.get("offlineLock", False),
-            daytime_start=data.get("daytimeStart", 7)
+            daytime_start=data.get("daytimeStart", 7),
+            sticky_white_noise_timeout=data.get("stickyWhiteNoiseTimeout", 0)
         )
 
     def to_dict(self):
@@ -248,7 +250,8 @@ class Settings:
             "weaning": self.weaning,
             "carRideMode": self.car_ride_mode,
             "offlineLock": self.offline_lock,
-            "daytimeStart": self.daytime_start
+            "daytimeStart": self.daytime_start,
+            "stickyWhiteNoiseTimeout": self.sticky_white_noise_timeout
         }
 
 

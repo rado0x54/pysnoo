@@ -636,6 +636,7 @@ class EventType(Enum):
     COMMAND = 'command'
     SAFETY_CLIP = 'safety_clip'
     STICKY_WHITE_NOISE_UPDATED = 'sticky_white_noise_updated'
+    LONG_ACTIVITY_PRESS = 'long_activity_press'
 
 
 @dataclass(frozen=True)

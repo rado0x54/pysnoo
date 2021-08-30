@@ -1,4 +1,5 @@
 """PySnoo Data Models."""
+import logging
 from typing import List, Optional
 from dataclasses import dataclass
 from datetime import datetime, date, timedelta, timezone
@@ -6,6 +7,7 @@ from enum import Enum
 
 from .const import DATETIME_FMT_AGGREGATED_SESSION
 
+_LOGGER = logging.getLogger(__name__)
 
 # from: https://github.com/ctalkington/python-sonarr/blob/master/sonarr/models.py
 def dt_str_to_dt(dt_str: str) -> datetime:
@@ -630,6 +632,7 @@ class StateMachine:
 
 class EventType(Enum):
     """Enum for EventType"""
+    UNKNOWN = 'unknown'
     ACTIVITY = 'activity'
     CRY = 'cry'
     TIMER = 'timer'
@@ -637,6 +640,16 @@ class EventType(Enum):
     SAFETY_CLIP = 'safety_clip'
     STICKY_WHITE_NOISE_UPDATED = 'sticky_white_noise_updated'
     LONG_ACTIVITY_PRESS = 'long_activity_press'
+    STATUS_REQUESTED = 'status_requested'
+    RESTART = 'restart'
+
+    @staticmethod
+    def try_parse(val):
+        try: 
+            return EventType(val)
+        except ValueError:
+            _LOGGER.warn("Unknown EventType '%s'", val)
+            return EventType.UNKNOWN
 
 
 @dataclass(frozen=True)
@@ -654,7 +667,7 @@ class ActivityState:
 
     @staticmethod
     def from_dict(data: dict):
-        """Return AggregatedSessionAvg object from dict."""
+        """Return ActivityState object from dict."""
         return ActivityState(
             left_safety_clip=bool(data.get("left_safety_clip")),
             rx_signal=Signal.from_dict(data.get("rx_signal", {})),
@@ -663,7 +676,7 @@ class ActivityState:
             event_time=datetime.utcfromtimestamp(data.get("event_time_ms") / 1000).replace(tzinfo=timezone.utc),
             state_machine=StateMachine.from_dict(data.get("state_machine", {})),
             system_state=data.get("system_state"),
-            event=EventType(data.get("event", EventType.ACTIVITY.value)),
+            event=EventType.try_parse(data.get("event", EventType.ACTIVITY.value)),
         )
 
     def to_dict(self):

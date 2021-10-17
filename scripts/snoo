@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Command line tool for interacting with the Snoo Bassinet API"""
+import logging
 import asyncio
 import argparse
 import getpass
@@ -12,6 +13,7 @@ from pysnoo.models import dt_str_to_dt
 
 # pylint: disable=unused-argument
 
+_LOGGER = logging.getLogger(__name__)
 
 async def _setup_pubnub(snoo: Snoo):
     """Utility Function to setup SnooPubNub"""
@@ -22,7 +24,7 @@ async def _setup_pubnub(snoo: Snoo):
         print('There is no Snoo connected to that account!')
         return
 
-    return SnooPubNub(snoo.auth.access_token,
+    return SnooPubNub(snoo.auth,
                       devices[0].serial_number,
                       f'pn-pysnoo-{devices[0].serial_number}')
 
@@ -82,9 +84,12 @@ async def monitor(snoo: Snoo, args):
     """monitor command"""
     def as_callback(activity_state):
         pprint(activity_state.to_dict())
+    def conn_callback(is_connected):
+        print("Monitor is connected" if is_connected else "Monitor is disconnected!")
 
     pubnub = await _setup_pubnub(snoo)
     pubnub.add_listener(as_callback)
+    pubnub.add_connection_listener(conn_callback)
 
     for activity_state in await pubnub.history():
         as_callback(activity_state)
@@ -268,7 +273,16 @@ def main():
                         help='Datetime in ISO8601 fromat. Used for some commands.'
                         )
 
+    parser.add_argument('-v',
+                        '--verbose',
+                        help='Show verbose logging.',
+                        action='store_const',
+                        const=logging.DEBUG,
+                        default=logging.WARN,
+    )
+
     args = parser.parse_args()
+    logging.basicConfig(level=args.verbose)
     token = get_token(args.token_file)
     token_updater = get_token_updater(args.token_file)
 

@@ -1,4 +1,5 @@
 """PySnoo Data Models."""
+import logging
 from typing import List, Optional
 from dataclasses import dataclass
 from datetime import datetime, date, timedelta, timezone
@@ -6,6 +7,7 @@ from enum import Enum
 
 from .const import DATETIME_FMT_AGGREGATED_SESSION
 
+_LOGGER = logging.getLogger(__name__)
 
 # from: https://github.com/ctalkington/python-sonarr/blob/master/sonarr/models.py
 def dt_str_to_dt(dt_str: str) -> datetime:
@@ -221,6 +223,7 @@ class Settings:
     offline_lock: bool
     # App restriction is 5-12 (am)
     daytime_start: int
+    sticky_white_noise_timeout: int
 
     @staticmethod
     def from_dict(data: dict):
@@ -234,7 +237,8 @@ class Settings:
             weaning=data.get("weaning", False),
             car_ride_mode=data.get("carRideMode", False),
             offline_lock=data.get("offlineLock", False),
-            daytime_start=data.get("daytimeStart", 7)
+            daytime_start=data.get("daytimeStart", 7),
+            sticky_white_noise_timeout=data.get("stickyWhiteNoiseTimeout", 0)
         )
 
     def to_dict(self):
@@ -248,7 +252,8 @@ class Settings:
             "weaning": self.weaning,
             "carRideMode": self.car_ride_mode,
             "offlineLock": self.offline_lock,
-            "daytimeStart": self.daytime_start
+            "daytimeStart": self.daytime_start,
+            "stickyWhiteNoiseTimeout": self.sticky_white_noise_timeout
         }
 
 
@@ -323,6 +328,7 @@ class SessionLevel(Enum):
     LEVEL4 = 'LEVEL4'
     NONE = 'NONE'
     PRETIMEOUT = 'PRETIMEOUT'
+    TIMEOUT = 'TIMEOUT'
 
     def is_active_level(self):
         """Returns true if the Enum value represents an active level."""
@@ -626,11 +632,24 @@ class StateMachine:
 
 class EventType(Enum):
     """Enum for EventType"""
+    UNKNOWN = 'unknown'
     ACTIVITY = 'activity'
     CRY = 'cry'
     TIMER = 'timer'
     COMMAND = 'command'
     SAFETY_CLIP = 'safety_clip'
+    STICKY_WHITE_NOISE_UPDATED = 'sticky_white_noise_updated'
+    LONG_ACTIVITY_PRESS = 'long_activity_press'
+    STATUS_REQUESTED = 'status_requested'
+    RESTART = 'restart'
+
+    @staticmethod
+    def try_parse(val):
+        try: 
+            return EventType(val)
+        except ValueError:
+            _LOGGER.warn("Unknown EventType '%s'", val)
+            return EventType.UNKNOWN
 
 
 @dataclass(frozen=True)
@@ -648,7 +667,7 @@ class ActivityState:
 
     @staticmethod
     def from_dict(data: dict):
-        """Return AggregatedSessionAvg object from dict."""
+        """Return ActivityState object from dict."""
         return ActivityState(
             left_safety_clip=bool(data.get("left_safety_clip")),
             rx_signal=Signal.from_dict(data.get("rx_signal", {})),
@@ -657,7 +676,7 @@ class ActivityState:
             event_time=datetime.utcfromtimestamp(data.get("event_time_ms") / 1000).replace(tzinfo=timezone.utc),
             state_machine=StateMachine.from_dict(data.get("state_machine", {})),
             system_state=data.get("system_state"),
-            event=EventType(data.get("event", EventType.ACTIVITY.value)),
+            event=EventType.try_parse(data.get("event", EventType.ACTIVITY.value)),
         )
 
     def to_dict(self):

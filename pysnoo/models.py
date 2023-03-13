@@ -631,6 +631,7 @@ class EventType(Enum):
     TIMER = 'timer'
     COMMAND = 'command'
     SAFETY_CLIP = 'safety_clip'
+    STATUS_REQUESTED = 'status_requested'
 
 
 @dataclass(frozen=True)
